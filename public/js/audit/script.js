@@ -1,0 +1,277 @@
+$(document).ready(function () {
+    
+    /**
+     * Initialize DataTable
+     */
+    if ($.fn.DataTable.isDataTable('.TableAudits')) {
+        $('.TableAudits').DataTable().destroy();
+    }
+    
+    var tableAudits = $('.TableAudits').DataTable({
+        processing: true,
+        serverSide: false,
+        ajax: {
+            url: auditUrl,
+            type: 'GET',
+            data: function(d) {
+                d.model_type = $('#modelFilter').val();
+                d.user_id = $('#userFilter').val();
+                d.event = $('#eventFilter').val();
+                
+                // Add date range if selected
+                if ($('#dateRangeFilter').val()) {
+                    var dates = $('#dateRangeFilter').data('daterangepicker');
+                    d.start_date = dates.startDate.format('YYYY-MM-DD');
+                    d.end_date = dates.endDate.format('YYYY-MM-DD');
+                }
+            },
+            dataSrc: function (json) {
+                if (json.data.length === 0) {
+                    $('.paging_full_numbers').css('display', 'none');
+                }
+                return json.data;
+            },
+            // error: function(xhr, error, thrown) {
+            //     console.log('DataTables error: ' + error + ' ' + thrown);
+            //     console.log(xhr);
+            //     new AWN().alert("Une erreur est survenue lors du chargement des données.", { durations: { alert: 5000 } });
+            // }
+        },
+        columns: [
+            { data: 'model_type', name: 'model_type' },
+            { data: 'event', name: 'event' },
+            { data: 'user_name', name: 'user_name' },
+            { 
+                data: 'changes', 
+                name: 'changes', 
+                orderable: false, 
+                searchable: false,
+                render: function(data, type, row) {
+                    return '<a href="' + auditUrl + '/details/' + row.id + '" class="btn btn-sm btn-outline-primary" title="Voir les détails">' +
+                           '<i class="fa fa-eye"></i> Détails</a>';
+                }
+            },
+            { data: 'created_at', name: 'created_at' }
+        ],
+        language: {
+            "sInfo": "Affichage de _START_ à _END_ sur _TOTAL_ éléments",
+            "sInfoEmpty": "Affichage de l'élément 0 à 0 sur 0 élément",
+            "sInfoFiltered": "(filtré à partir de _MAX_ éléments au total)",
+            "sLengthMenu": "Afficher _MENU_ éléments",
+            "sLoadingRecords": "Chargement...",
+            "sProcessing": "Traitement...",
+            "sSearch": "Rechercher :",
+            "sZeroRecords": "Aucun élément correspondant trouvé",
+            "oPaginate": {
+                "sFirst": "Premier",
+                "sLast": "Dernier",
+                "sNext": "Suivant",
+                "sPrevious": "Précédent"
+            }
+        },
+        order: [[4, 'desc']], // Sort by date column (index 4)
+        responsive: true
+    });
+    
+    /**
+     * Initialize Date Range Picker
+     */
+    if ($('#dateRangeFilter').length) {
+        $('#dateRangeFilter').daterangepicker({
+            opens: 'left',
+            autoUpdateInput: false,
+            showDropdowns: true,
+            ranges: {
+                'Aujourd\'hui': [moment(), moment()],
+                'Hier': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                'Les 7 derniers jours': [moment().subtract(6, 'days'), moment()],
+                'Les 30 derniers jours': [moment().subtract(29, 'days'), moment()],
+                'Ce mois': [moment().startOf('month'), moment().endOf('month')],
+                'Le mois dernier': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            },
+            locale: {
+                format: 'DD/MM/YYYY',
+                applyLabel: 'Appliquer',
+                cancelLabel: 'Annuler',
+                fromLabel: 'Du',
+                toLabel: 'Au',
+                customRangeLabel: 'Période personnalisée',
+                daysOfWeek: ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa'],
+                monthNames: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'],
+                firstDay: 1
+            }
+        });
+        
+        // When a date range is selected
+        $('#dateRangeFilter').on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('DD/MM/YYYY') + ' - ' + picker.endDate.format('DD/MM/YYYY'));
+            tableAudits.ajax.reload();
+        });
+        
+        // When date range selection is canceled
+        $('#dateRangeFilter').on('cancel.daterangepicker', function() {
+            $(this).val('');
+            tableAudits.ajax.reload();
+        });
+        
+        // Make readonly
+        $('#dateRangeFilter').attr('readonly', 'readonly');
+    }
+    
+    /**
+     * Apply filters when changed
+     */
+    $('#modelFilter, #userFilter, #eventFilter').on('change', function() {
+        tableAudits.ajax.reload();
+    });
+    
+    /**
+     * Clear filters button
+     */
+    $('#clearFilters').on('click', function() {
+        $('#modelFilter').val('');
+        $('#userFilter').val('');
+        $('#eventFilter').val('');
+        $('#dateRangeFilter').val('');
+        
+        tableAudits.ajax.reload();
+    });
+    
+    /**
+     * Export button
+     */
+    $('#exportAuditCSV').on('click', function() {
+        let queryParams = [];
+        
+        if ($('#modelFilter').val()) {
+            queryParams.push('model_type=' + encodeURIComponent($('#modelFilter').val()));
+        }
+        
+        if ($('#userFilter').val()) {
+            queryParams.push('user_id=' + encodeURIComponent($('#userFilter').val()));
+        }
+        
+        if ($('#eventFilter').val()) {
+            queryParams.push('event=' + encodeURIComponent($('#eventFilter').val()));
+        }
+        
+        if ($('#dateRangeFilter').val()) {
+            const dates = $('#dateRangeFilter').data('daterangepicker');
+            queryParams.push('start_date=' + encodeURIComponent(dates.startDate.format('YYYY-MM-DD')));
+            queryParams.push('end_date=' + encodeURIComponent(dates.endDate.format('YYYY-MM-DD')));
+        }
+        
+        // Construct query string
+        const queryString = queryParams.join('&');
+        
+        // Redirect to export URL
+        window.location.href = auditUrl + '/export' + (queryString ? '?' + queryString : '');
+    });
+    
+    /**
+     * Clear filters button (alternative implementation for inline script)
+     */
+    $(document).on('click', '#clearFilters', function() {
+        $('#modelFilter').val('');
+        $('#userFilter').val('');
+        $('#eventFilter').val('');
+        $('#dateRangeFilter').val('');
+        
+        // Recharger le tableau
+        if ($.fn.DataTable.isDataTable('.TableAudits')) {
+            $('.TableAudits').DataTable().ajax.reload();
+        }
+    });
+    
+    /**
+     * Export CSV button (alternative implementation for inline script)
+     */
+    $(document).on('click', '#exportAuditCSV', function() {
+        // Préparation des filtres pour l'URL d'exportation
+        let queryParams = {};
+        
+        if ($('#modelFilter').val()) {
+            queryParams.model_type = $('#modelFilter').val();
+        }
+        
+        if ($('#userFilter').val()) {
+            queryParams.user_id = $('#userFilter').val();
+        }
+        
+        if ($('#eventFilter').val()) {
+            queryParams.event = $('#eventFilter').val();
+        }
+        
+        if ($('#dateRangeFilter').val()) {
+            const dates = $('#dateRangeFilter').data('daterangepicker');
+            queryParams.start_date = dates.startDate.format('YYYY-MM-DD');
+            queryParams.end_date = dates.endDate.format('YYYY-MM-DD');
+        }
+        
+        // Construction de la chaîne de requête
+        const queryString = Object.keys(queryParams)
+            .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(queryParams[key]))
+            .join('&');
+        
+        // Redirection vers l'URL d'exportation
+        window.location.href = $(this).data('url') + '?' + queryString;
+    });
+    
+    /**
+     * Special handling for transfer/retour filter
+     * If user selects transfer or retour, we can add any special behavior here
+     */
+    $('#modelFilter').on('change', function() {
+        const selectedType = $(this).val();
+        
+        // Special handling for transfer/retour types if needed
+        if (selectedType === 'transfer') {
+            console.log('Transfer filter selected - showing only transfers (from and to not null)');
+        } else if (selectedType === 'retour') {
+            console.log('Retour filter selected - showing only retours (from is null)');
+        }
+        
+        // Special handling for commande type if needed
+        if (selectedType === 'commande') {
+            // You can add any special behavior for commande filter here
+            // For example, show additional filters, change table columns, etc.
+            console.log('Commande filter selected');
+        }
+        
+        // Special handling for achat type if needed
+        if (selectedType === 'achat') {
+            console.log('Achat filter selected');
+        }
+        
+        // Reload table with new filter
+        tableAudits.ajax.reload();
+    });
+    
+    /**
+     * Enhanced filter functionality
+     */
+    function updateFilterIndicators() {
+        let activeFilters = 0;
+        
+        if ($('#modelFilter').val()) activeFilters++;
+        if ($('#userFilter').val()) activeFilters++;
+        if ($('#eventFilter').val()) activeFilters++;
+        if ($('#dateRangeFilter').val()) activeFilters++;
+        
+        // Update clear filters button
+        if (activeFilters > 0) {
+            $('#clearFilters').removeClass('btn-secondary').addClass('btn-warning');
+            $('#clearFilters').html('<i class="fa fa-filter-circle-xmark"></i> Réinitialiser (' + activeFilters + ')');
+        } else {
+            $('#clearFilters').removeClass('btn-warning').addClass('btn-secondary');
+            $('#clearFilters').html('<i class="fa fa-filter-circle-xmark"></i> Réinitialiser les filtres');
+        }
+    }
+    
+    // Update filter indicators when filters change
+    $('#modelFilter, #userFilter, #eventFilter').on('change', updateFilterIndicators);
+    $('#dateRangeFilter').on('apply.daterangepicker cancel.daterangepicker', updateFilterIndicators);
+    
+    // Initial update
+    updateFilterIndicators();
+});
