@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
+
 class HomeController extends Controller
 {
     /**
@@ -48,6 +49,14 @@ class HomeController extends Controller
                         ->whereNull('s.deleted_at')
                         ->whereRaw('s.quantite <= p.seuil')
                         ->count();
+
+
+        $Product_Exepration = DB::table('products')
+                            ->where('date_expiration', '<=', DB::raw('DATE_ADD(CURDATE(), INTERVAL 7 DAY)'))
+                            ->get();
+
+
+        
         
         return view('home', compact(
             'totalUtilisateurs', // Changed variable name
@@ -57,7 +66,8 @@ class HomeController extends Controller
             'achatsEnAttente',
             'commandesValidees',
             'achatsValides',
-            'stocksAlertes'
+            'stocksAlertes',
+            'Product_Exepration'
         ));
     }
     

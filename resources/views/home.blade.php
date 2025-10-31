@@ -157,6 +157,28 @@
                 </div>
             </div>
 
+
+            <div  class="table-responsive">
+                <table class="table table-primary">
+                    <thead>
+                        <tr>
+                            <th scope="col">name</th>
+                            <th scope="col">code artical</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($Product_Exepration as $item)
+                            <tr>
+                                <td>{{ $item->name }}</td>
+                                <td>{{ $item->code_article }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            
+
             <!-- Troisième ligne avec les graphiques -->
             <!-- <div class="row"> -->
                 <!-- Statut des commandes -->

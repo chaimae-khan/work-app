@@ -106,6 +106,11 @@
                                 <h6 class="fs-15 mb-2">sign</h6>
                                 <p class="text-muted">hala hala</p>
                                 <div class="mt-2">
+                                    {{-- @if (!image)
+                                        <canvas id="signature-pad" class="border border-red"></canvas>
+                                        @else
+                                        <canvas id="signature-pad" class="border border-red"></canvas>
+                                    @endif --}}
                                     <canvas id="signature-pad" class="border border-red"></canvas>
                                 </div>
                             </div>
