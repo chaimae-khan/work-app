@@ -106,6 +106,10 @@ private function processVentes(Carbon $date)
 {
     $ventes = Vente::whereDate('created_at', $date)
         ->where('status', 'Validation')
+        ->where(function($query) {
+            $query->where('is_transfer', false)
+                  ->orWhereNull('is_transfer');
+        })
         ->get();
 
     foreach ($ventes as $vente) {

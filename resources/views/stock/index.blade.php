@@ -8,6 +8,9 @@
     var alertCountUrl = "{{ url('stock/alert-count') }}";
     var stockExportExcelUrl = "{{ url('stock/export-excel') }}";
     var stockExportPdfUrl = "{{ url('stock/export-pdf') }}";
+    var getSubcategories_url = "{{ url('stock/subcategories') }}";
+    var GetCategorieByClass = "{{ url('stock/categories-by-class') }}";
+    var searchProductNames_url = "{{ url('stock/search-product-names') }}";
 </script>
 <div class="content-page">
     <div class="content">
@@ -35,10 +38,56 @@
                             <div class="alert alert-warning alert-dismissible fade" role="alert" id="stock-alert" style="display: none;">
                                 <strong><i class="fa-solid fa-triangle-exclamation me-2"></i>Attention!</strong> 
                                 la quantité de <span id="alert-count">0</span> produit(s) est presque épuisée.
+                                <span id="product-names"></span>
                                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
                                                     
                             <div class="table-responsive">
+                                <!-- Filter Section -->
+<div class="row mb-3">
+    <div class="col-md-3">
+        <label for="filter_class" class="form-label">Classe</label>
+        <select class="form-select" id="filter_class" name="filter_class">
+            <option value="">Toutes les classes</option>
+            @foreach($class as $cl)
+                <option value="{{ $cl->classe }}">{{ $cl->classe }}</option>
+            @endforeach
+        </select>
+    </div>
+    
+    <div class="col-md-3">
+        <label for="filter_categorie" class="form-label">Catégorie</label>
+        <select class="form-select" id="filter_categorie" name="filter_categorie">
+            <option value="">Toutes les catégories</option>
+        </select>
+    </div>
+    
+    <div class="col-md-3">
+        <label for="filter_subcategorie" class="form-label">Famille</label>
+        <select class="form-select" id="filter_subcategorie" name="filter_subcategorie">
+            <option value="">Toutes les familles</option>
+        </select>
+    </div>
+    
+    <div class="col-md-3">
+        <label for="filter_designation" class="form-label">Désignation</label>
+        <div class="position-relative">
+            <input type="text" class="form-control" id="filter_designation" 
+                   placeholder="Rechercher un produit...">
+            <div id="designation_suggestions" class="list-group position-absolute w-100" 
+                 style="z-index: 1000; display: none; max-height: 200px; overflow-y: auto;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-12">
+        <button type="button" class="btn btn-secondary" id="btn_reset_filter">
+            <i class="fa-solid fa-filter-circle-xmark me-1"></i> Réinitialiser les filtres
+        </button>
+    </div>
+</div>
                                 <div class="datatable-wrapper datatable-loading no-footer sortable fixed-height fixed-columns">
                                     
                                     <div class="datatable-container">

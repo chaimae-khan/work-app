@@ -427,35 +427,153 @@ function loadRayons(localSelector, rayonSelector, selectedValue = null) {
     });
 }
 
-// Add filter events
 function initializeFilters() {
+    // Class filter change
+    $('#filter_class').on('change', function() {
+        var className = $(this).val();
+        var categorySelect = $('#filter_categorie');
+        var subcategorySelect = $('#filter_subcategorie');
+        
+        // Reset dependent dropdowns
+        categorySelect.empty().append('<option value="">Toutes les catégories</option>');
+        subcategorySelect.empty().append('<option value="">Toutes les familles</option>');
+        
+        if (className) {
+            loadFilterCategoriesByClass(className);
+        } else {
+            // If no class selected, reload all categories via AJAX
+            loadAllCategories();
+        }
+        
+        $('.TableProducts').DataTable().ajax.reload();
+    });
+    
     // Category filter change
     $('#filter_categorie').on('change', function() {
         var categoryId = $(this).val();
         
-        // Reset subcategory dropdown
         $('#filter_subcategorie').empty().append('<option value="">Toutes les familles</option>');
         
-        // If a category is selected, load its subcategories
         if (categoryId) {
             loadFilterSubcategories(categoryId);
         }
         
-        // Refresh the DataTable to apply the filter
         $('.TableProducts').DataTable().ajax.reload();
     });
     
     // Subcategory filter change
     $('#filter_subcategorie').on('change', function() {
-        // Refresh the DataTable to apply the filter
         $('.TableProducts').DataTable().ajax.reload();
     });
     
-    // Reset filters button click
-    $('#btn_reset_filter').on('click', function() {
-        $('#filter_categorie').val('');
-        $('#filter_subcategorie').empty().append('<option value="">Toutes les familles</option>');
+    // Designation autocomplete
+    let designationTimeout;
+    $('#filter_designation').on('keyup', function() {
+        clearTimeout(designationTimeout);
+        const query = $(this).val();
+        
+        if (query.length < 2) {
+            $('#designation_suggestions').hide().empty();
+            if (query.length === 0) {
+                $('.TableProducts').DataTable().ajax.reload();
+            }
+            return;
+        }
+        
+        designationTimeout = setTimeout(function() {
+            $.ajax({
+                url: searchProductNames_url,
+                type: 'GET',
+                data: { query: query },
+                success: function(response) {
+                    if (response.status === 200 && response.products.length > 0) {
+                        let suggestions = '';
+                        $.each(response.products, function(key, product) {
+                            suggestions += '<a href="#" class="list-group-item list-group-item-action designation-item" data-id="' + product.id + '" data-name="' + product.name + '">' + product.name + '</a>';
+                        });
+                        $('#designation_suggestions').html(suggestions).show();
+                    } else {
+                        $('#designation_suggestions').hide().empty();
+                    }
+                }
+            });
+        }, 300);
+    });
+    
+    // Click on suggestion
+    $(document).on('click', '.designation-item', function(e) {
+        e.preventDefault();
+        const name = $(this).data('name');
+        $('#filter_designation').val(name);
+        $('#designation_suggestions').hide().empty();
         $('.TableProducts').DataTable().ajax.reload();
+    });
+    
+    // Hide suggestions when clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#filter_designation, #designation_suggestions').length) {
+            $('#designation_suggestions').hide();
+        }
+    });
+    
+    // Reset filters button
+    $('#btn_reset_filter').on('click', function() {
+        $('#filter_class').val('');
+        $('#filter_designation').val('');
+        $('#designation_suggestions').hide().empty();
+        
+        // Reset category dropdown
+        $('#filter_categorie').empty().append('<option value="">Toutes les catégories</option>');
+        loadAllCategories();
+        
+        // Reset subcategory dropdown
+        $('#filter_subcategorie').empty().append('<option value="">Toutes les familles</option>');
+        
+        // Reload table
+        $('.TableProducts').DataTable().ajax.reload();
+    });
+}
+
+// Load all categories (used when no class filter is selected)
+function loadAllCategories() {
+    var categorySelect = $('#filter_categorie');
+    
+    $.ajax({
+        type: "GET",
+        url: products_url + '/categories',
+        dataType: "json",
+        success: function(response) {
+            if (response.status === 200) {
+                $.each(response.categories, function(index, category) {
+                    categorySelect.append('<option value="' + category.id + '">' + category.name + '</option>');
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("Erreur de chargement de toutes les catégories:", error);
+        }
+    });
+}
+
+// Load categories by class for filter
+function loadFilterCategoriesByClass(className) {
+    var categorySelect = $('#filter_categorie');
+    
+    $.ajax({
+        type: "GET",
+        url: GetCategorieByClass,
+        data: { class: className },
+        dataType: "json",
+        success: function (response) {
+            if (response.status === 200) {
+                $.each(response.data, function(index, item) {
+                    categorySelect.append('<option value="' + item.id + '">' + item.name + '</option>');
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("Erreur de chargement des catégories pour le filtre:", error);
+        }
     });
 }
 

@@ -34,6 +34,7 @@ class Vente extends Model implements Auditable
         'id_client',
         'id_formateur', 
         'id_user',
+        'is_transfer',
         'eleves',
         'personnel',
         'invites',

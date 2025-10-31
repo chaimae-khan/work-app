@@ -79,16 +79,25 @@ class ProductController extends Controller
                 ->leftJoin('users as us', 'p.id_user', '=', 'us.id')
                 ->whereNull('p.deleted_at');
             
-            // Apply category filter if provided
-            if ($request->filled('filter_categorie')) {
-                $query->where('p.id_categorie', $request->filter_categorie);
-            }
-            
-            // Apply subcategory filter if provided
-            if ($request->filled('filter_subcategorie')) {
-                $query->where('p.id_subcategorie', $request->filter_subcategorie);
-            }
-            
+          // Apply class filter if provided
+if ($request->filled('filter_class')) {
+    $query->where('c.classe', $request->filter_class);
+}
+
+// Apply category filter if provided
+if ($request->filled('filter_categorie')) {
+    $query->where('p.id_categorie', $request->filter_categorie);
+}
+
+// Apply subcategory filter if provided
+if ($request->filled('filter_subcategorie')) {
+    $query->where('p.id_subcategorie', $request->filter_subcategorie);
+}
+
+// Apply designation (name) filter if provided
+if ($request->filled('filter_designation')) {
+    $query->where('p.name', 'LIKE', '%' . $request->filter_designation . '%');
+}
             $products = $query->select(
                 'p.id',
                 'p.name',
@@ -1237,4 +1246,42 @@ public function update(Request $request)
             ], 500);
         }
     }
+    /**
+ * Search product names for autocomplete
+ */
+public function searchProductNames(Request $request)
+{
+    try {
+        $query = $request->get('query', '');
+        
+        if (strlen($query) < 2) {
+            return response()->json([
+                'status' => 200,
+                'products' => []
+            ]);
+        }
+        
+        $products = Product::where('name', 'LIKE', '%' . $query . '%')
+            ->whereNull('deleted_at')
+            ->select('id', 'name')
+            ->limit(10)
+            ->get();
+        
+        return response()->json([
+            'status' => 200,
+            'products' => $products
+        ]);
+        
+    } catch (\Exception $e) {
+        Log::error('Error searching product names', [
+            'error' => $e->getMessage()
+        ]);
+        
+        return response()->json([
+            'status' => 500,
+            'message' => 'Erreur lors de la recherche',
+            'products' => []
+        ], 500);
+    }
+}
 }

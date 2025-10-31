@@ -97,7 +97,6 @@ class FilesystemAdapter implements CloudFilesystemContract
      * @param  \League\Flysystem\FilesystemOperator  $driver
      * @param  \League\Flysystem\FilesystemAdapter  $adapter
      * @param  array  $config
-     * @return void
      */
     public function __construct(FilesystemOperator $driver, FlysystemAdapter $adapter, array $config = [])
     {
@@ -160,7 +159,7 @@ class FilesystemAdapter implements CloudFilesystemContract
         $actual = count($this->files($path, $recursive));
 
         PHPUnit::assertEquals(
-            $actual, $count, "Expected [{$count}] files at [{$path}], but found [{$actual}]."
+            $count, $actual, "Expected [{$count}] files at [{$path}], but found [{$actual}]."
         );
 
         return $this;

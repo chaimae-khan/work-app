@@ -132,8 +132,8 @@
                                 <div class="col-md-3">
                                     <label for="type_operation" class="form-label">Type d'opération</label>
                                     <select class="form-select" id="type_operation">
-                                        <option value="sortie">Sortie (Vente)</option>
-                                        <option value="entree">Entrée (Achat)</option>
+                                        <option value="sortie">Sortie </option>
+                                        <option value="entree">Entrée</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3" id="type_commande_container">

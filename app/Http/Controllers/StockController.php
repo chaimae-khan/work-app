@@ -7,6 +7,7 @@ use App\Models\Product;
 use Illuminate\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Yajra\DataTables\Facades\DataTables;
 // Fix imports for PhpSpreadsheet
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -53,6 +54,26 @@ class StockController extends Controller
                             DB::raw("CONCAT(COALESCE(us.prenom, ''), ' ', COALESCE(us.nom, '')) as username"),
                             'p.created_at'
                         );
+            
+            // Apply class filter if provided
+            if ($request->filled('filter_class')) {
+                $dataStock->where('c.classe', $request->filter_class);
+            }
+
+            // Apply category filter if provided
+            if ($request->filled('filter_categorie')) {
+                $dataStock->where('p.id_categorie', $request->filter_categorie);
+            }
+
+            // Apply subcategory filter if provided
+            if ($request->filled('filter_subcategorie')) {
+                $dataStock->where('p.id_subcategorie', $request->filter_subcategorie);
+            }
+
+            // Apply designation (name) filter if provided
+            if ($request->filled('filter_designation')) {
+                $dataStock->where('p.name', 'LIKE', '%' . $request->filter_designation . '%');
+            }
     
             return DataTables::of($dataStock)
                 ->addIndexColumn()
@@ -83,8 +104,18 @@ class StockController extends Controller
                 ->rawColumns(['status', 'photo_display'])
                 ->make(true);
         }
+        
+        // Get distinct classes for filter dropdown
+        $class = DB::table('categories')
+                    ->whereNotNull('classe')
+                    ->where('classe', '!=', '')
+                    ->distinct()
+                    ->pluck('classe')
+                    ->map(function($classe) {
+                        return (object)['classe' => $classe];
+                    });
              
-        return view('stock.index');
+        return view('stock.index', compact('class'));
     }
 
     /**
@@ -92,16 +123,21 @@ class StockController extends Controller
      */
     public function getAlertCount()
     {
-        $alertCount = DB::table('stock as s')
+        $lowStockProducts = DB::table('stock as s')
                     ->join('products as p', 'p.id', 's.id_product')
                     ->whereNull('s.deleted_at')
                     ->whereNull('p.deleted_at')
                     ->whereRaw('s.quantite <= p.seuil')
-                    ->count();
+                    ->select('p.name')
+                    ->get();
+
+        $alertCount = $lowStockProducts->count();
+        $productNames = $lowStockProducts->pluck('name')->toArray();
 
         return response()->json([
             'status' => 200,
-            'count' => $alertCount
+            'count' => $alertCount,
+            'products' => $productNames
         ]);
     }
     
@@ -384,5 +420,146 @@ class StockController extends Controller
         
         // Download PDF
         return $pdf->download('GESTOCK TOUARGA - Stock - ' . date('d-m-Y') . '.pdf');
+    }
+    
+    /**
+     * Search product names for autocomplete in stock filters
+     */
+    public function searchProductNames(Request $request)
+    {
+        try {
+            $query = $request->get('query', '');
+            
+            if (strlen($query) < 2) {
+                return response()->json([
+                    'status' => 200,
+                    'products' => []
+                ]);
+            }
+            
+            $products = Product::where('name', 'LIKE', '%' . $query . '%')
+                ->whereNull('deleted_at')
+                ->select('id', 'name')
+                ->limit(10)
+                ->get();
+            
+            return response()->json([
+                'status' => 200,
+                'products' => $products
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error searching product names', [
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'status' => 500,
+                'message' => 'Erreur lors de la recherche',
+                'products' => []
+            ], 500);
+        }
+    }
+    
+    /**
+     * Get all categories for filter
+     */
+    public function getCategories()
+    {
+        try {
+            $categories = DB::table('categories')
+                ->whereNull('deleted_at')
+                ->select('id', 'name')
+                ->orderBy('name', 'asc')
+                ->get();
+            
+            return response()->json([
+                'status' => 200,
+                'categories' => $categories
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching categories', [
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'status' => 500,
+                'message' => 'Erreur lors de la récupération des catégories',
+                'categories' => []
+            ], 500);
+        }
+    }
+    
+    /**
+     * Get categories by class for filter
+     */
+// In ProductController.php
+public function getCategoriesByClass(Request $request)
+{
+    try {
+        $class = $request->get('class');
+        
+        if (!$class) {
+            return response()->json([
+                'status' => 400,
+                'message' => 'Classe non spécifiée',
+                'data' => []
+            ], 400);
+        }
+        
+        $categories = DB::table('categories')
+            ->where('classe', $class)
+            ->whereNull('deleted_at')
+            ->select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        return response()->json([
+            'status' => 200,
+            'data' => $categories
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error fetching categories by class', [
+            'error' => $e->getMessage(),
+            'class' => $request->get('class')
+        ]);
+        
+        return response()->json([
+            'status' => 500,
+            'message' => 'Erreur lors de la récupération des catégories',
+            'data' => []
+        ], 500);
+        }
+    }
+    
+    /**
+     * Get subcategories by category for filter
+     */
+    public function getSubcategories($categoryId)
+    {
+        try {
+            $subcategories = DB::table('sub_categories')
+                ->where('id_categorie', $categoryId)
+                ->whereNull('deleted_at')
+                ->select('id', 'name')
+                ->orderBy('name', 'asc')
+                ->get();
+            
+            return response()->json([
+                'status' => 200,
+                'subcategories' => $subcategories
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching subcategories', [
+                'error' => $e->getMessage(),
+                'category_id' => $categoryId
+            ]);
+            
+            return response()->json([
+                'status' => 500,
+                'message' => 'Erreur lors de la récupération des familles',
+                'subcategories' => []
+            ], 500);
+        }
     }
 }

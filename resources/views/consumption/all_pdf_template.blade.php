@@ -467,11 +467,14 @@
                 @if(isset($imageData) && $imageData)
                     <img src="data:image/png;base64,{{ $imageData }}" alt="Ministry Logo">
                 @else
-                    Royaume du Maroc<br>
-                    MINISTÈRE DU TOURISME<br>
-                    Centre de qualification Professionnelle<br>
-                    Hôtelière et Touristique<br>
-                    de Touargas
+                    <!--Royaume du Maroc<br>-->
+                    <!--MINISTÈRE DU TOURISME<br>-->
+                    <!--Centre de qualification Professionnelle<br>-->
+                    <!--Hôtelière et Touristique<br>-->
+                    <!--de Touargas-->
+                         Institut Spécialisé <br>
+                        de Technologie Appliquée<br>
+                        Hotelière et Touristique de Touarga - Rabat<br>
                 @endif
             </div>
             
@@ -1016,11 +1019,14 @@
                     @if(isset($imageData) && $imageData)
                         <img src="data:image/png;base64,{{ $imageData }}" alt="Ministry Logo">
                     @else
-                        Royaume du Maroc<br>
-                        MINISTÈRE DU TOURISME<br>
-                        Centre de qualification Professionnelle<br>
-                        Hôtelière et Touristique<br>
-                        de Touargas
+                        <!--Royaume du Maroc<br>-->
+                        <!--MINISTÈRE DU TOURISME<br>-->
+                        <!--Centre de qualification Professionnelle<br>-->
+                        <!--Hôtelière et Touristique<br>-->
+                        <!--de Touargas-->
+                        Institut Spécialisé <br>
+                        de Technologie Appliquée<br>
+                        Hotelière et Touristique de Touarga - Rabat<br>
                     @endif
                 </div>
                 

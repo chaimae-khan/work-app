@@ -18,6 +18,7 @@
     var getRayons_url = "{{ url('getRayons') }}";
     var importProduct_url = "{{ url('importProduct') }}";
     var GetCategorieByClass = "{{url('GetCategorieByClass')}}";
+    var searchProductNames_url = "{{ url('searchProductNames') }}";
 </script>
 <script src="{{ asset('js/product/script.js') }}"></script>
 
@@ -59,12 +60,24 @@
    @endcan
 </div>
 
+
 <!-- Filter Section -->
 <div class="card mb-3">
     <div class="card-body">
         <h5 class="card-title">Filtrer les produits</h5>
-        <div class="row">
-            <div class="col-md-5">
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="filter_class">Classe</label>
+                    <select id="filter_class" class="form-control">
+                        <option value="">Toutes les classes</option>
+                        @foreach($class as $item)
+                            <option value="{{ $item->classe }}">{{ $item->classe }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
                 <div class="form-group">
                     <label for="filter_categorie">Catégorie</label>
                     <select id="filter_categorie" class="form-control">
@@ -75,17 +88,25 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-3">
                 <div class="form-group">
                     <label for="filter_subcategorie">Famille</label>
                     <select id="filter_subcategorie" class="form-control">
                         <option value="">Toutes les familles</option>
-                        <!-- Will be populated dynamically -->
                     </select>
                 </div>
             </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button id="btn_reset_filter" class="btn btn-secondary w-100">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="filter_designation">Désignation</label>
+                    <input type="text" id="filter_designation" class="form-control" placeholder="Rechercher un produit..." autocomplete="off">
+                    <div id="designation_suggestions" class="list-group position-absolute" style="z-index: 1000; max-height: 200px; overflow-y: auto; display: none;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12 text-end">
+                <button id="btn_reset_filter" class="btn btn-secondary">
                     <i class="fa-solid fa-rotate"></i> Réinitialiser
                 </button>
             </div>
@@ -141,7 +162,43 @@
 
                 <!-- Formulaire d'ajout de produit -->
                 <form id="FormAddProduct" enctype="multipart/form-data">
-                    <!-- Informations de base du produit -->
+                    
+                    <!-- Classe et Catégorie -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Classe</label>
+                                <select name="class" id="Class_Categorie" class="form-control" required>
+                                    <option value="">Sélectionner une classe</option>
+                                    @foreach($class as $item)
+                                    <option value="{{$item->classe}}">{{$item->classe}}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>Catégorie</label>
+                                <select name="id_categorie" id="Categorie_Class" class="form-control" required>
+                                    <option value="">Sélectionner une catégorie</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Famille -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label>Famille</label>
+                                <select name="id_subcategorie" id="id_subcategorie" class="form-control" required>
+                                    <option value="">Sélectionner une famille</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Désignation et Unité -->
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <div class="form-group">
@@ -162,60 +219,7 @@
                         </div>
                     </div>
 
-                    <!-- Catégorie et Sous-catégorie -->
-                    <!-- <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Catégorie</label>
-                                <select name="id_categorie" id="id_categorie" class="form-control" required>
-                                    <option value="">Sélectionner une catégorie</option>
-                                    @foreach($categories as $category)
-                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Famille</label>
-                                <select name="id_subcategorie" id="id_subcategorie" class="form-control" required>
-                                    <option value="">Sélectionner une famille</option>
-                                
-                                </select>
-                            </div>
-                        </div>
-                    </div> -->
-                    <div class="row mb-3">
-    <div class="col-md-4">
-        <div class="form-group">
-            <label>Classe</label>
-            <select name="class" id="Class_Categorie" class="form-control" required>
-                <option value="">Sélectionner une classe</option>
-                @foreach($class as $item)
-                <option value="{{$item->classe}}">{{$item->classe}}</option>
-                @endforeach
-            </select>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="form-group">
-            <label>Catégorie</label>
-            <select name="id_categorie" id="Categorie_Class" class="form-control" required>
-                <option value="">Sélectionner une catégorie</option>
-            </select>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="form-group">
-            <label>Famille</label>
-            <select name="id_subcategorie" id="id_subcategorie" class="form-control" required>
-                <option value="">Sélectionner une famille</option>
-            </select>
-        </div>
-    </div>
-</div>
-
-                    <!-- Emplacement -->
+                    <!-- Local et Rayon -->
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <div class="form-group">
@@ -239,7 +243,7 @@
                         </div>
                     </div>
 
-                    <!-- Prix -->
+                    <!-- Prix d'achat -->
                     <div class="row mb-3">
                         <div class="col-md-12">
                             <div class="form-group">
@@ -249,7 +253,7 @@
                         </div>
                     </div>
 
-                    <!-- Stock et Taxe -->
+                    <!-- Quantité, Seuil et TVA -->
                     <div class="row mb-3">
                         <div class="col-md-4">
                             <div class="form-group">
@@ -276,15 +280,9 @@
                         </div>
                     </div>
 
-                    <!-- Informations supplémentaires -->
+                    <!-- Date d'expiration -->
                     <div class="row mb-3">
-                        <!-- <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Code barre</label>
-                                <input type="text" name="code_barre" class="form-control">
-                            </div>
-                        </div> -->
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <div class="form-group">
                                 <label>Date d'expiration</label>
                                 <input type="date" name="date_expiration" class="form-control">
@@ -292,29 +290,6 @@
                         </div>
                     </div>
 
-                    <!-- <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>class</label>
-                                <select name="" id="Class_Categorie" class="form-select">
-                                    @foreach($class as $item)
-                                    <option value="{{$item->classe}}">{{$item->classe}}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            
-                        </div>
-                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label>categorie</label>
-                                <select name="" id="Categorie_Class" class="form-select">
-                                    
-                                </select>
-                            </div>
-                            
-                        </div>
-
-                    </div> -->
                 </form>
             </div>
             <div class="modal-footer">
@@ -343,6 +318,37 @@
                 <form id="FormUpdateProduct" enctype="multipart/form-data">
                     <input type="hidden" id="edit_id" name="id">
                     
+                    <!-- Classe, Catégorie et Famille -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Classe</label>
+                                <select name="class" id="edit_Class_Categorie" class="form-control" required>
+                                    <option value="">Sélectionner une classe</option>
+                                    @foreach($class as $item)
+                                    <option value="{{$item->classe}}">{{$item->classe}}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Catégorie</label>
+                                <select name="id_categorie" id="edit_Categorie_Class" class="form-control" required>
+                                    <option value="">Sélectionner une catégorie</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Famille</label>
+                                <select name="id_subcategorie" id="edit_id_subcategorie" class="form-control" required>
+                                    <option value="">Sélectionner une famille</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Informations de base du produit -->
                     <div class="row mb-3">
                         <div class="col-md-6">
@@ -379,58 +385,6 @@
                             </div> -->
                         </div>
                     </div>
-
-                    <!-- Catégorie et Sous-catégorie -->
-                    <!-- <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Catégorie</label>
-                                <select id="edit_id_categorie" name="id_categorie" class="form-control" required>
-                                    <option value="">Sélectionner une catégorie</option>
-                                    @foreach($categories as $category)
-                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Famille</label>
-                                <select id="edit_id_subcategorie" name="id_subcategorie" class="form-control" required>
-                                    <option value="">Sélectionner une famille</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div> -->
-                    <div class="row mb-3">
-    <div class="col-md-4">
-        <div class="form-group">
-            <label>Classe</label>
-            <select name="class" id="edit_Class_Categorie" class="form-control" required>
-                <option value="">Sélectionner une classe</option>
-                @foreach($class as $item)
-                <option value="{{$item->classe}}">{{$item->classe}}</option>
-                @endforeach
-            </select>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="form-group">
-            <label>Catégorie</label>
-            <select name="id_categorie" id="edit_Categorie_Class" class="form-control" required>
-                <option value="">Sélectionner une catégorie</option>
-            </select>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="form-group">
-            <label>Famille</label>
-            <select name="id_subcategorie" id="edit_id_subcategorie" class="form-control" required>
-                <option value="">Sélectionner une famille</option>
-            </select>
-        </div>
-    </div>
-</div>
 
                     <!-- Emplacement -->
                     <div class="row mb-3">
@@ -471,19 +425,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Photo Section -->
-                    <!-- <div class="row mb-3">
-                        <div class="col-md-12">
-                            <div class="form-group">
-                                <label>Photo</label>
-                                <input type="file" name="photo" id="edit_photo" class="form-control" accept="image/*">
-                                <small class="text-muted">Télécharger une nouvelle photo</small>
-                                <div id="current_photo_container" class="mt-2" style="display: none;"></div>
-                                <div id="edit_photo_preview" class="mt-2" style="display: none;"></div>
-                            </div>
-                        </div>
-                    </div> -->
 
                     <!-- Stock et Taxe -->
                     <div class="row mb-3">

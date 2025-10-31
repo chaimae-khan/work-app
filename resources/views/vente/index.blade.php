@@ -95,7 +95,7 @@
                                         <th scope="col">Personnel</th>     
                                         <th scope="col">Invités</th>      
                                         <th scope="col">Divers</th> 
-                                        <th scope="col">Date de consommation</th>       
+                                        <th scope="col">Date d’utilisation</th>       
                                         <th scope="col">Créé par</th>
                                         <th scope="col">Créé le</th>
                                         <th scope="col">Action</th>      
@@ -146,7 +146,7 @@
                                     </select>
                                 </div>
                                 <div class="form-group mt-2">
-                                          <label for="date_usage" class="form-label">Date de consommation</label>
+                                          <label for="date_usage" class="form-label">Date d’utilisation</label>
                                           <input type="date" class="form-control" id="date_usage" name="date_usage">
                                 </div>
 
@@ -253,9 +253,9 @@
                                         <div class="col-6">
                                             <label for="" class="form-label">Produit</label>
                                         </div>
-                                        <div class="col-6 text-end">
-                                            <a href="#" class="text-danger linkCallModalAddProduct">Ajouter Produit</a>
-                                        </div>
+                                        <!--<div class="col-6 text-end">-->
+                                        <!--    <a href="#" class="text-danger linkCallModalAddProduct">Ajouter Produit</a>-->
+                                        <!--</div>-->
                                     </div>
                                     <input type="text" class="form-control input_products" placeholder="Entrez votre produit">
                                 </div>

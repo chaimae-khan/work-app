@@ -663,7 +663,7 @@ public function index(Request $request)
                         'id_client' => $originalVente->id_client,
                         'id_formateur' => $transfer->to, // Important: set as formateur
                         'status' => 'Validation', // Auto-validate the received stock
-                        'is_transfer' => true, // Mark as transfer
+                        'is_transfer' => 1, // Mark as transfer
                         'total' => 0, // Initialize total as 0, will be calculated if needed
                         'date_vente' => now(),
                         // Copy other fields from original if they exist

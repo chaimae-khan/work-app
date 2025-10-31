@@ -291,7 +291,7 @@
 <li>
     <a class='tp-link' href="{{url('consumption')}}">
         <i class="fa-solid fa-utensils"></i>
-        <span> Consommation </span>
+        <span>Feuille de Consommation (Reporting)</span>
     </a>
 </li>   
 @endcan
@@ -309,7 +309,7 @@
 <li>
     <a class='tp-link' href="{{url('consumption/all')}}">
         <i class="fa-solid fa-chart-line"></i>
-        <span> Vue Complète de Consommation </span>
+        <span>FEUILLE DE CONSOMMATION JOURNALIÈRE</span>
     </a>
 </li>
 @endcan

@@ -50,7 +50,7 @@
             <!-- Back Button -->
             <div class="row mb-3">
                 <div class="col-12">
-                    <a href="{{ url('transfer') }}" class="btn btn-secondary">
+                    <a href="{{ url('Router') }}" class="btn btn-secondary">
                         <i class="fa-solid fa-arrow-left me-1"></i> Retour à la liste
                     </a>
                 </div>

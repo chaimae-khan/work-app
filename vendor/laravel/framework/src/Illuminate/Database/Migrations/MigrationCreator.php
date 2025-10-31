@@ -35,7 +35,6 @@ class MigrationCreator
      *
      * @param  \Illuminate\Filesystem\Filesystem  $files
      * @param  string  $customStubPath
-     * @return void
      */
     public function __construct(Filesystem $files, $customStubPath)
     {
@@ -83,7 +82,7 @@ class MigrationCreator
      * Ensure that a migration with the given name doesn't already exist.
      *
      * @param  string  $name
-     * @param  string  $migrationPath
+     * @param  string|null  $migrationPath
      * @return void
      *
      * @throws \InvalidArgumentException

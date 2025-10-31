@@ -97,7 +97,6 @@ class PendingProcess
      * Create a new pending process instance.
      *
      * @param  \Illuminate\Process\Factory  $factory
-     * @return void
      */
     public function __construct(Factory $factory)
     {
@@ -400,7 +399,7 @@ class PendingProcess
      * @param  \Closure  $fake
      * @return \Illuminate\Process\FakeInvokedProcess
      *
-     * @throw \LogicException
+     * @throws \LogicException
      */
     protected function resolveAsynchronousFake(string $command, ?callable $output, Closure $fake)
     {

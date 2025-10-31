@@ -142,6 +142,7 @@ Route::get('/consumption/export-monthly-breakdown-pdf', [ConsumptionController::
     Route::post('updateProduct', [ProductController::class, 'update']);
     Route::post('deleteProduct', [ProductController::class, 'destroy']);
     Route::post('/importProduct', [ProductController::class, 'import'])->name('importProduct');
+    Route::get('/searchProductNames', [ProductController::class, 'searchProductNames']);
     
 
     // Vente routes
@@ -182,7 +183,11 @@ Route::get('/consumption/export-monthly-breakdown-pdf', [ConsumptionController::
     // stock
     Route::get('/stock', [StockController::class, 'index']);
     Route::get('/stock/alert-count', [StockController::class, 'getAlertCount']);
-
+    Route::get('/stock/search-product-names', [StockController::class, 'searchProductNames'])->name('stock.searchProductNames');
+    Route::get('/stock/categories', [StockController::class, 'getCategories']);
+    // In web.php
+Route::get('/stock/categories-by-class', [StockController::class, 'getCategoriesByClass'])->name('stock.categories-by-class');
+Route::get('/stock/subcategories/{categoryId}', [StockController::class, 'getSubcategories'])->name('stock.subcategories');
     // Dependent dropdown routes
     Route::get('getSubcategories/{id}', [ProductController::class, 'getSubcategories']);
     Route::get('getRayons/{id}', [ProductController::class, 'getRayons']);

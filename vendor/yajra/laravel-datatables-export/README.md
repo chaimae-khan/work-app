@@ -35,7 +35,9 @@ exporting using Queue, OpenSpout and Livewire.
 
 ## Quick Installation
 
-`composer require yajra/laravel-datatables-export:^12.0`
+```
+composer require yajra/laravel-datatables-export:"^12.0"
+```
 
 The package also requires batch job:
 
@@ -44,13 +46,11 @@ php artisan queue:batches-table
 php artisan migrate
 ```
 
-#### Service Provider (Optional since Laravel 5.5+)
+### Configuration and Assets (Optional)
 
-`Yajra\DataTables\ExportServiceProvider::class`
-
-#### Configuration and Assets (Optional)
-
-`$ php artisan vendor:publish --tag=datatables-export --force`
+```
+php artisan vendor:publish --tag=datatables-export --force
+```
 
 ## Usage
 

@@ -69,7 +69,6 @@ class LogManager implements LoggerInterface
      * Create a new Log manager instance.
      *
      * @param  \Illuminate\Contracts\Foundation\Application  $app
-     * @return void
      */
     public function __construct($app)
     {
@@ -272,17 +271,21 @@ class LogManager implements LoggerInterface
             $config['channels'] = explode(',', $config['channels']);
         }
 
-        $handlers = (new Collection($config['channels']))->flatMap(function ($channel) {
-            return $channel instanceof LoggerInterface
-                ? $channel->getHandlers()
-                : $this->channel($channel)->getHandlers();
-        })->all();
+        $handlers = (new Collection($config['channels']))
+            ->flatMap(function ($channel) {
+                return $channel instanceof LoggerInterface
+                    ? $channel->getHandlers()
+                    : $this->channel($channel)->getHandlers();
+            })
+            ->all();
 
-        $processors = (new Collection($config['channels']))->flatMap(function ($channel) {
-            return $channel instanceof LoggerInterface
-                ? $channel->getProcessors()
-                : $this->channel($channel)->getProcessors();
-        })->all();
+        $processors = (new Collection($config['channels']))
+            ->flatMap(function ($channel) {
+                return $channel instanceof LoggerInterface
+                    ? $channel->getProcessors()
+                    : $this->channel($channel)->getProcessors();
+            })
+            ->all();
 
         if ($config['ignore_exceptions'] ?? false) {
             $handlers = [new WhatFailureGroupHandler($handlers)];
@@ -515,13 +518,14 @@ class LogManager implements LoggerInterface
     /**
      * Flush the log context on all currently resolved channels.
      *
+     * @param  string[]|null  $keys
      * @return $this
      */
-    public function withoutContext()
+    public function withoutContext(?array $keys = null)
     {
         foreach ($this->channels as $channel) {
             if (method_exists($channel, 'withoutContext')) {
-                $channel->withoutContext();
+                $channel->withoutContext($keys);
             }
         }
 
@@ -626,6 +630,10 @@ class LogManager implements LoggerInterface
 
         if ($this->app->runningUnitTests()) {
             $driver ??= 'null';
+        }
+
+        if ($driver === null) {
+            return null;
         }
 
         return trim($driver);

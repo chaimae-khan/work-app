@@ -96,7 +96,6 @@ class Event
      * @param  \Illuminate\Console\Scheduling\EventMutex  $mutex
      * @param  string  $command
      * @param  \DateTimeZone|string|null  $timezone
-     * @return void
      */
     public function __construct(EventMutex $mutex, $command, $timezone = null)
     {
@@ -381,7 +380,7 @@ class Event
     /**
      * E-mail the results of the scheduled operation.
      *
-     * @param  array|mixed  $addresses
+     * @param  mixed  $addresses
      * @param  bool  $onlyIfOutputExists
      * @return $this
      *
@@ -401,7 +400,7 @@ class Event
     /**
      * E-mail the results of the scheduled operation if it produces output.
      *
-     * @param  array|mixed  $addresses
+     * @param  mixed  $addresses
      * @return $this
      *
      * @throws \LogicException
@@ -414,7 +413,7 @@ class Event
     /**
      * E-mail the results of the scheduled operation if it fails.
      *
-     * @param  array|mixed  $addresses
+     * @param  mixed  $addresses
      * @return $this
      */
     public function emailOutputOnFailure($addresses)

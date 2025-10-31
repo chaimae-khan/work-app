@@ -18,10 +18,18 @@ use Illuminate\Http\Request;
  */
 abstract class DataTablesEditor
 {
+    /** @use \Yajra\DataTables\Concerns\WithCreateAction<TModel> */
     use Concerns\WithCreateAction;
+
+    /** @use \Yajra\DataTables\Concerns\WithEditAction<TModel> */
     use Concerns\WithEditAction;
+
     use Concerns\WithForceDeleteAction;
+    use Concerns\WithReadAction;
+
+    /** @use \Yajra\DataTables\Concerns\WithRemoveAction<TModel> */
     use Concerns\WithRemoveAction;
+
     use Concerns\WithRestoreAction;
     use Concerns\WithUploadAction;
     use ValidatesRequests;
@@ -43,6 +51,7 @@ abstract class DataTablesEditor
         'upload',
         'forceDelete',
         'restore',
+        'read',
     ];
 
     /**
@@ -86,6 +95,11 @@ abstract class DataTablesEditor
      * Current request data that is being processed.
      */
     protected array $currentData = [];
+
+    public function __invoke(): JsonResponse
+    {
+        return $this->process();
+    }
 
     /**
      * Process dataTables editor action request.
@@ -131,7 +145,7 @@ abstract class DataTablesEditor
             && is_string($request->get('action'));
     }
 
-    protected function getUseFriendlyErrorMessage(): string
+    public function getUseFriendlyErrorMessage(): string
     {
         return 'An error occurs while processing your request.';
     }
@@ -171,6 +185,8 @@ abstract class DataTablesEditor
 
     /**
      * Get dataTables model.
+     *
+     * @return class-string<TModel>|TModel|null
      */
     public function getModel(): Model|string|null
     {
@@ -197,7 +213,7 @@ abstract class DataTablesEditor
         return [];
     }
 
-    protected function formatErrors(Validator $validator): array
+    public function formatErrors(Validator $validator): array
     {
         $errors = [];
 
@@ -258,16 +274,23 @@ abstract class DataTablesEditor
         return $this;
     }
 
-    protected function dataFromRequest(Request $request): array
+    public function dataFromRequest(Request $request): array
     {
         return (array) $request->get('data');
     }
 
+    /**
+     * @param  TModel  $model
+     */
     public function saving(Model $model, array $data): array
     {
         return $data;
     }
 
+    /**
+     * @param  TModel  $model
+     * @return TModel
+     */
     public function saved(Model $model, array $data): Model
     {
         return $model;
