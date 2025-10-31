@@ -72,7 +72,37 @@ class CompteController extends Controller
         }
         
         $user = Auth::user();
+        $image = $request->image;
+        
+        if (!empty($image)) 
+        {
+            // Clean the base64 string
+            $image = str_replace('data:image/png;base64,', '', $image);
+            $image = str_replace(' ', '+', $image);
 
+            // Generate unique name
+            $imageName = 'signature_' . $user->id . '_' . time() . '.png';
+
+            // Define folder path (inside public/images/signatures)
+            $folderPath = public_path('images/signatures');
+
+            // Create directory if it doesn’t exist
+            if (!file_exists($folderPath)) {
+                mkdir($folderPath, 0777, true);
+            }
+
+            // Save the image to /public/images/signatures
+            file_put_contents($folderPath . '/' . $imageName, base64_decode($image));
+
+            // Save signature path in the database (you can use a Signature model if you have one)
+            User::where('id',$user->id)->update([
+                'signature'=> 'images/signatures/' . $imageName,
+            ]);
+           /*  User::updateOrCreate(
+                ['id' => $user->id],
+                ['signature' => 'images/signatures/' . $imageName]
+            ); */
+        }
         if (!$user) {
             return response()->json([
                 'status' => 404,

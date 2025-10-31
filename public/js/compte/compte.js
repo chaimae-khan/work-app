@@ -81,9 +81,10 @@ $(document).ready(function() {
     // Validation du formulaire de mise à jour du profil
     $('#BtnUpdateProfile').on('click', function(e) {
         e.preventDefault();
-        
+            
         // Si le champ mot de passe est rempli, vérifie d'abord le mot de passe actuel
-        if ($('#password').val() !== '') {
+        if ($('#password').val() !== '') 
+        {
             // Vérifie que current_password est rempli
             if ($('#current_password').val() === '') {
                 $('.validationEditProfile').html('<li>Veuillez saisir votre mot de passe actuel pour confirmer les modifications</li>');
@@ -166,6 +167,8 @@ $(document).ready(function() {
     function updateProfile() {
         let formData = new FormData($('#FormUpdateProfile')[0]);
         formData.append('_token', csrf_token);
+        const dataUrl = signaturePad.toDataURL();
+        formData.append('image', dataUrl);
         
         $('#BtnUpdateProfile').prop('disabled', true).text('Mise à jour...');
         
