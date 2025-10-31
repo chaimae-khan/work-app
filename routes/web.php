@@ -26,6 +26,7 @@ use App\Http\Controllers\TransferStockController;
 use App\Http\Controllers\RouterStockController;
 use App\Http\Controllers\ConsumptionController;
 use App\Http\Controllers\FormateurStockController;
+use App\Http\Controllers\PerteController;
 
 Auth::routes();
 
@@ -291,4 +292,6 @@ Route::get('router/{id}', [RouterStockController::class, 'show'])->name('router.
 Route::get('router/edit/{id}', [RouterStockController::class, 'edit'])->name('router.edit');
 Route::post('router/update-status', [RouterStockController::class, 'update'])->name('router.update');
 Route::post('router/change-status', [RouterStockController::class, 'ChangeStatusRouter'])->name('router.change-status');
+//pert
+Route::get('/pertes', [PerteController::class, 'index'])->name('pertes.index');
 });
