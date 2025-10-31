@@ -139,7 +139,7 @@ $(document).ready(function () {
                 $.ajax({
                     type: "GET",
                     url: editPerte_url + "/" + perteId,
-                    dataType: "json",
+                    dataType: "json", 
                     success: function(response) {
                         // Enable edit button
                         $('.editPerte').prop('disabled', false);

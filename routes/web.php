@@ -294,4 +294,5 @@ Route::post('router/update-status', [RouterStockController::class, 'update'])->n
 Route::post('router/change-status', [RouterStockController::class, 'ChangeStatusRouter'])->name('router.change-status');
 //pert
 Route::get('/pertes', [PerteController::class, 'index'])->name('pertes.index');
+Route::post('addPerte',[PerteController::class,'store']);
 });

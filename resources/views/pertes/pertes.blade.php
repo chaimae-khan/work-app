@@ -152,7 +152,7 @@
 
                             <!-- Formulaire d'ajout de perte -->
                             <form id="FormAddPerte">
-                                
+                               
                                 <!-- Classe et Catégorie -->
                                 <div class="row mb-3">
                                     <div class="col-md-6">
@@ -160,14 +160,18 @@
                                             <label>Classe</label>
                                             <select name="class" id="Class_Categorie" class="form-control" required>
                                                 <option value="">Sélectionner une classe</option>
+                                                @foreach($classes as $item)
+                                                    <option value="{{ $item->classe }}">{{ $item->classe }}</option>
+                                                @endforeach
                                             </select>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label>Catégorie</label>
-                                            <select name="id_categorie" id="Categorie_Class" class="form-control" required>
+                                            <select name="id_category" id="Categorie_Class" class="form-control" required>
                                                 <option value="">Sélectionner une catégorie</option>
+                                                
                                             </select>
                                         </div>
                                     </div>
@@ -178,8 +182,11 @@
                                     <div class="col-md-12">
                                         <div class="form-group">
                                             <label>Famille</label>
-                                            <select name="id_subcategorie" id="id_subcategorie" class="form-control" required>
+                                            <select name="id_sub_categories" id="id_subcategorie" class="form-control" required>
                                                 <option value="">Sélectionner une famille</option>
+                                                 @foreach($SubCategory as $item)
+                                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                                @endforeach
                                             </select>
                                         </div>
                                     </div>
@@ -190,7 +197,12 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label>Désignation</label>
-                                            <input type="text" name="designation" id="designation" class="form-control" required>
+                                            <select name="id_product" id="id_subcategorie" class="form-control" required>
+                                                <option value="">Sélectionner une Désignation</option>
+                                                 @foreach($Product as $item)
+                                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                                @endforeach
+                                            </select>
                                             <div id="product_suggestions" class="list-group position-absolute" style="z-index: 1050; max-height: 200px; overflow-y: auto; display: none;"></div>
                                         </div>
                                     </div>
@@ -199,6 +211,7 @@
                                             <label>Unité</label>
                                             <select name="id_unite" id="id_unite" class="form-control" required>
                                                 <option value="">Sélectionner une unité</option>
+                                                
                                             </select>
                                         </div>
                                     </div>
@@ -209,7 +222,7 @@
                                     <div class="col-md-12">
                                         <div class="form-group">
                                             <label>Quantité</label>
-                                            <input type="number" step="0.01" name="quantite" id="quantite" class="form-control" required>
+                                            <input type="number" step="0.01" name="qte" id="quantite" class="form-control" required>
                                         </div>
                                     </div>
                                 </div>
@@ -230,7 +243,7 @@
                                     <div class="col-md-4">
                                         <div class="form-group">
                                             <label>Date</label>
-                                            <input type="date" name="date_perte" id="date_perte" class="form-control" required>
+                                            <input type="date" name="date" id="date_perte" class="form-control" required>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
