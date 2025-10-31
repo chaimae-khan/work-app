@@ -206,7 +206,7 @@ $(document).ready(function () {
         });
     }
     
-    $(phoneFormatter);
+    $(phoneFormatter); 
      const canvas = document.getElementById('signature-pad');
 const signaturePad = new SignaturePad(canvas);
 

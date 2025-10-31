@@ -20,6 +20,7 @@ use Illuminate\Support\Str;
 use App\Helpers\ChunkReadFilter;
 use League\Csv\Reader;
 use League\Csv\Statement; 
+use App\Models\Fournisseur;
 
 class ProductController extends Controller
 {
@@ -32,11 +33,16 @@ class ProductController extends Controller
         $countSubCategories = SubCategory::count();
         $countLocals = Local::count();
         $countRayons = Rayon::count();
+        $countFournisseur = Fournisseur::count();
         
         // Check for required tables first
         if ($countCategories == 0) {
             return view('Error.index')
                 ->withErrors('Tu n\'as pas de catégories');
+        }
+        if ($countFournisseur == 0) {
+            return view('Error.index')
+                ->withErrors('Tu n\'as pas de fournisseur');
         }
         
         if ($countSubCategories == 0) {
@@ -145,9 +151,11 @@ if ($request->filled('filter_designation')) {
         $rayons = Rayon::all();
         $tvas = Tva::all();
         $unites = Unite::all();
+        $Fournisseur=Fournisseur::all();
         $class  = DB::select("select distinct(classe) as classe from categories");
         
-        return view('products.index', compact('categories', 'subcategories', 'locals', 'rayons', 'tvas', 'unites','class'));
+        return view('products.index',
+         compact('categories', 'subcategories', 'locals', 'rayons', 'tvas', 'unites','class','Fournisseur'));
     }
 
     /**

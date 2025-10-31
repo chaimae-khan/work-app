@@ -17,7 +17,7 @@
     var getSubcategories_url = "{{ url('getSubcategories') }}";
     var getRayons_url = "{{ url('getRayons') }}";
     var importProduct_url = "{{ url('importProduct') }}";
-    var GetCategorieByClass = "{{url('GetCategorieByClass')}}";
+    var GetCategorieByClass = "{{url('GetCategorieByClass')}}"; 
     var searchProductNames_url = "{{ url('searchProductNames') }}";
 </script>
 <script src="{{ asset('js/product/script.js') }}"></script>
@@ -282,10 +282,30 @@
 
                     <!-- Date d'expiration -->
                     <div class="row mb-3">
-                        <div class="col-md-12">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label>Date d'expiration</label>
                                 <input type="date" name="date_expiration" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Fournissuer</label>
+                                <select name="" id="" class="form-select">
+                                    <option value="0">Please selected Fournissuer</option>
+                                    @foreach ($Fournisseur as $item)
+                                        <option value={{ $item->id }}>{{ $item->entreprise }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Fournissuer</label>
+                                <div class="form-group">
+                                <label>Date réception</label>
+                                <input type="date" name="date_reception" class="form-control">
+                            </div>
                             </div>
                         </div>
                     </div>

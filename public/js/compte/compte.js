@@ -5,6 +5,8 @@
  */
 
 $(document).ready(function() {
+    const canvas = document.getElementById('signature-pad');
+    const signaturePad = new SignaturePad(canvas);
     // Fonctionnalité pour montrer/cacher le mot de passe
     $('.toggle-password').on('click', function() {
         const passwordField = $($(this).data('toggle'));
@@ -26,6 +28,14 @@ $(document).ready(function() {
         // Préremplit les champs avec les informations actuelles
         $('#name').val($('#user-name').text().trim());
         $('#email').val($('#user-email').text().trim());
+        if (signaturePad.isEmpty()) 
+        {
+            alert('Please provide a signature first.');
+            $('#BtnADDUser').prop('disabled', false).text('Sauvegarder');
+            return;
+        }
+        
+        
         
         // Afficher toutes les sections
         $('.profile-info-section').show();
@@ -101,6 +111,7 @@ $(document).ready(function() {
                 
                 return;
             }
+            const dataUrl = signaturePad.toDataURL();
             
             // Vérifie le mot de passe actuel d'abord
             $.ajax({
@@ -108,7 +119,8 @@ $(document).ready(function() {
                 url: VerifyPasswordUrl,
                 data: {
                     _token: csrf_token,
-                    current_password: $('#current_password').val()
+                    current_password: $('#current_password').val(),
+                    'image' : dataUrl
                 },
                 dataType: "json",
                 success: function(response) {

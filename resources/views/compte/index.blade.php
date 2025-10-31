@@ -7,6 +7,7 @@
     var UpdateProfileUrl = "{{url('updateProfile')}}";
     var VerifyPasswordUrl = "{{url('verifyPassword')}}";
 </script>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
 <div class="content-page">
     <div class="content">
@@ -98,6 +99,14 @@
                                     @foreach(explode(', ', $userRoles) as $role)
                                         <span class="badge bg-primary me-1 mb-1">{{ $role }}</span>
                                     @endforeach
+                                </div>
+                            </div>
+                            <hr class="my-4">
+                            <div class="mb-3">
+                                <h6 class="fs-15 mb-2">sign</h6>
+                                <p class="text-muted">hala hala</p>
+                                <div class="mt-2">
+                                    <canvas id="signature-pad" class="border border-red"></canvas>
                                 </div>
                             </div>
                         </div>
