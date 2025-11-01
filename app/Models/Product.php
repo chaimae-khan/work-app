@@ -37,7 +37,7 @@ class Product extends Model implements Auditable
         'class',
         'photo',
         'price_vente',
-        'date_expiration', // Added new field for expiration date
+        'date_expiration', 
         'date_reception',
         'id_fournisseur'
     ];

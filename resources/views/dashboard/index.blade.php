@@ -381,7 +381,7 @@
                               
                             </li>
                             @endcan
-                            @can('Achat')
+                            <!-- @can('Achat')
                             <li>
                               
                                 <a class='tp-link' href='{{url('Achat')}}'>
@@ -390,7 +390,7 @@
                                 </a>
                                
                             </li> 
-                            @endcan
+                            @endcan -->
                             @can('Commande')
                             <li>
                                
