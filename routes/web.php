@@ -310,5 +310,8 @@ Route::get('/pertes/{id}', [PerteController::class, 'show'])->name('pertes.show'
 Route::get('/vente/categories-by-class', [VenteController::class, 'getCategoriesByClass'])->name('vente.categories.by.class');
 Route::get('/vente/subcategories/{categoryId}', [VenteController::class, 'getSubcategories'])->name('vente.subcategories');
 Route::get('/vente/search-products', [VenteController::class, 'searchProductNames'])->name('vente.search.products');
+
+Route::get('getcategorybytypemenu',[VenteController::class,'getcategorybytypemenu']);
+
 });
 

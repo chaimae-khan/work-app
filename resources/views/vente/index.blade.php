@@ -30,6 +30,7 @@
     var getCategoriesByClass_url = "{{ route('vente.categories.by.class') }}";
     var getVenteSubcategories_url = "{{ route('vente.subcategories', ':id') }}";
     var searchVenteProducts_url = "{{ route('vente.search.products') }}";
+    var getcategorybytypemenu = "{{ url('getcategorybytypemenu') }}"
 </script>
 
 <style>
@@ -145,7 +146,8 @@
                                 <div class="form-group mt-2">
                                     <label for="type_commande" class="form-label">Type de commande</label>
                                     <select name="type_commande" class="form-select" id="type_commande">
-                                        <option value="Alimentaire" selected>Alimentaire</option>
+                                        <option value="0" selected>Please selected type order</option>
+                                        <option value="Alimentaire" >Alimentaire</option>
                                         <option value="Non Alimentaire">Non Alimentaire</option>
                                         <!-- <option value="Fournitures et matériels">Fournitures et matériels</option> -->
                                     </select>
@@ -283,9 +285,9 @@
                                         <label for="filter_categorie" class="form-label">Catégorie</label>
                                         <select class="form-select" id="filter_categorie" name="filter_categorie">
                                             <option value="">Toutes les catégories</option>
-                                            @foreach ($categories as $item)
+                                            {{-- @foreach ($categories as $item)
                                                 <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                            @endforeach
+                                            @endforeach --}}
                                         </select>
                                     </div>
                                     

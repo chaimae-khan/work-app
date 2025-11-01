@@ -1675,6 +1675,26 @@ public function getSubcategories($categoryId)
     }
 }
 
+public function getcategorybytypemenu(Request $request)
+{
+    
+    $classe = "";
+    if($request->type_commande == "Non Alimentaire")
+    {
+        $classe = "NON ALIMENTAIRE";
+    }
+    else
+    {
+        $classe = "DENREES ALIMENTAIRES";
+    }
+    $data   = Category::where('classe',$classe)->get();
+    
+    return response()->json([
+        'status'  => 200,
+        'data'    => $data,
+    ]);
+}
+
 /**
  * Search product names for autocomplete in filters
  */

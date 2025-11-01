@@ -172,37 +172,62 @@ class AchatController extends Controller
     public function getProduct(Request $request)
     {
         $name_product = $request->product;
-        $category     = $request->category;
+        $category = $request->category;
         $filter_subcategorie = $request->filter_subcategorie;
+        $type_command = $request->type_commande;
 
-        
-        if ($request->ajax()) {
-            
+        $classe = $type_command == "Non Alimentaire" ? "NON ALIMENTAIRE" : "DENREES ALIMENTAIRES";
+
+        if ($request->ajax()) 
+        {
+            // Get category IDs that belong to the selected classe
+            $get_id_category = Category::where('classe', $classe)->pluck('id')->toArray();
+
             $Data_Product = DB::table('products as p')
                 ->join('stock as s', 'p.id', '=', 's.id_product')
                 ->join('locals as l', 'p.id_local', '=', 'l.id')
-                /* ->where('p.name', 'like', '%' . $name_product . '%') */
+                ->join('categories as c', 'c.id', '=', 'p.id_categorie')
                 ->whereNull('p.deleted_at')
-                ->select('p.name', 's.quantite', 'p.seuil', 'p.price_achat', 'l.name as name_local','p.id','p.price_vente');
-                /* ->get(); */
+                ->select(
+                    'p.name',
+                    's.quantite',
+                    'p.seuil',
+                    'p.price_achat',
+                    'l.name as name_local',
+                    'p.id',
+                    'p.price_vente'
+                );
+
             $Data_Product->when($name_product, function ($q, $name_product) {
-                return $q->where('p.name', 'like', '%' . $name_product . '%');
+                return $q->where('p.name', 'like',  $name_product . '%');
             });
-            $Data_Product->when($category, function ($c, $category) {
-                return $c->where('p.id_categorie', 'like', '%' . $category . '%');
+
+            $Data_Product->when($category, function ($q, $category) {
+                return $q->where('p.id_categorie', $category);
             });
-            $Data_Product->when($filter_subcategorie, function ($s, $filter_subcategorie) {
-                return $s->where('p.id_subcategorie', 'like', '%' . $filter_subcategorie . '%');
+
+            $Data_Product->when($filter_subcategorie, function ($q, $filter_subcategorie) {
+                return $q->where('p.id_subcategorie', $filter_subcategorie);
+            });
+
+            // Apply class-based category filter
+            $Data_Product->when($get_id_category, function ($q) use ($get_id_category) {
+                return $q->whereIn('p.id_categorie', $get_id_category);
             });
 
             $results = $Data_Product->get();
+
+            return response()->json(
+                [
+                        'status' => 200,
+                        'data'   => $results
+                    ]);
+        }
+
            // dd($request);
 
-            return response()->json([
-                'status' => 200,
-                'data'   => $results
-            ]);
-        }
+            
+        
     }
 
     public function PostInTmpAchat(Request $request)
