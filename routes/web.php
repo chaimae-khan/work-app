@@ -305,5 +305,10 @@ Route::get('stock/expiring', [StockController::class, 'expiringProducts'])->name
 Route::get('stock/low-stock', [StockController::class, 'lowStockProducts'])->name('stock.lowstock');
 Route::get('stock/expiring-count', [StockController::class, 'getExpiringCount'])->name('stock.expiringcount');
 Route::get('/pertes/{id}', [PerteController::class, 'show'])->name('pertes.show');
+
+// Vente filter routes
+Route::get('/vente/categories-by-class', [VenteController::class, 'getCategoriesByClass'])->name('vente.categories.by.class');
+Route::get('/vente/subcategories/{categoryId}', [VenteController::class, 'getSubcategories'])->name('vente.subcategories');
+Route::get('/vente/search-products', [VenteController::class, 'searchProductNames'])->name('vente.search.products');
 });
 

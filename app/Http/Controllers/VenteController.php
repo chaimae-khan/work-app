@@ -142,35 +142,53 @@ class VenteController extends Controller
 }
 
 
-    public function getProduct(Request $request)
-    {
-        try {
-            $name_product = $request->product;
-        
-            if ($request->ajax()) {
-                $Data_Product = DB::table('products as p')
-                    ->join('stock as s', 'p.id', '=', 's.id_product')
-                    ->join('locals as l', 'p.id_local', '=', 'l.id')
-                    ->where('p.name', 'like', '%' . $name_product . '%')
-                    ->whereNull('p.deleted_at')
-                    ->select('p.name', 's.quantite', 'p.seuil', 'p.price_achat', 'l.name as name_local', 'p.id')
-                    ->get();
-                    
-                return response()->json([
-                    'status' => 200,
-                    'data'   => $Data_Product
-                ]);
-            }
-        } catch (\Exception $e) {
-            \Log::error('Error in getProduct: ' . $e->getMessage());
+  public function getProduct(Request $request)
+{
+    try {
+        $name_product = $request->product;
+    
+        if ($request->ajax()) {
+            $query = DB::table('products as p')
+                ->join('stock as s', 'p.id', '=', 's.id_product')
+                ->join('locals as l', 'p.id_local', '=', 'l.id')
+                ->leftJoin('categories as c', 'p.id_categorie', '=', 'c.id')
+                ->leftJoin('sub_categories as sc', 'p.id_subcategorie', '=', 'sc.id')
+                ->where('p.name', 'like', '%' . $name_product . '%')
+                ->whereNull('p.deleted_at');
             
+            // Apply class filter if provided
+            if ($request->filled('filter_class')) {
+                $query->where('c.classe', $request->filter_class);
+            }
+
+            // Apply category filter if provided
+            if ($request->filled('filter_categorie')) {
+                $query->where('p.id_categorie', $request->filter_categorie);
+            }
+
+            // Apply subcategory filter if provided
+            if ($request->filled('filter_subcategorie')) {
+                $query->where('p.id_subcategorie', $request->filter_subcategorie);
+            }
+            
+            $Data_Product = $query->select('p.name', 's.quantite', 'p.seuil', 'p.price_achat', 'l.name as name_local', 'p.id')
+                ->get();
+                
             return response()->json([
-                'status' => 500,
-                'message' => 'Une erreur est survenue lors de la recherche de produits',
-                'error' => $e->getMessage()
-            ], 500);
+                'status' => 200,
+                'data'   => $Data_Product
+            ]);
         }
+    } catch (\Exception $e) {
+        \Log::error('Error in getProduct: ' . $e->getMessage());
+        
+        return response()->json([
+            'status' => 500,
+            'message' => 'Une erreur est survenue lors de la recherche de produits',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
     public function PostInTmpVente(Request $request)
     {
@@ -1580,5 +1598,116 @@ public function update(Request $request)
             ]);
         }
     }
+/**
+ * Get categories by class for filter
+ */
+public function getCategoriesByClass(Request $request)
+{
+    try {
+        $class = $request->get('class');
+        
+        if (!$class) {
+            return response()->json([
+                'status' => 400,
+                'message' => 'Classe non spécifiée',
+                'data' => []
+            ], 400);
+        }
+        
+        $categories = DB::table('categories')
+            ->where('classe', $class)
+            ->whereNull('deleted_at')
+            ->select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        return response()->json([
+            'status' => 200,
+            'data' => $categories
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Error fetching categories by class', [
+            'error' => $e->getMessage(),
+            'class' => $request->get('class')
+        ]);
+        
+        return response()->json([
+            'status' => 500,
+            'message' => 'Erreur lors de la récupération des catégories',
+            'data' => []
+        ], 500);
+    }
+}
+
+/**
+ * Get subcategories by category for filter
+ */
+public function getSubcategories($categoryId)
+{
+    try {
+        $subcategories = DB::table('sub_categories')
+            ->where('id_categorie', $categoryId)
+            ->whereNull('deleted_at')
+            ->select('id', 'name')
+            ->orderBy('name', 'asc')
+            ->get();
+        
+        return response()->json([
+            'status' => 200,
+            'subcategories' => $subcategories
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Error fetching subcategories', [
+            'error' => $e->getMessage(),
+            'category_id' => $categoryId
+        ]);
+        
+        return response()->json([
+            'status' => 500,
+            'message' => 'Erreur lors de la récupération des familles',
+            'subcategories' => []
+        ], 500);
+    }
+}
+
+/**
+ * Search product names for autocomplete in filters
+ */
+public function searchProductNames(Request $request)
+{
+    try {
+        $query = $request->get('query', '');
+        
+        if (strlen($query) < 2) {
+            return response()->json([
+                'status' => 200,
+                'products' => []
+            ]);
+        }
+        
+        $products = DB::table('products')
+            ->where('name', 'LIKE', '%' . $query . '%')
+            ->whereNull('deleted_at')
+            ->select('id', 'name')
+            ->limit(10)
+            ->get();
+        
+        return response()->json([
+            'status' => 200,
+            'products' => $products
+        ]);
+        
+    } catch (\Exception $e) {
+        \Log::error('Error searching product names', [
+            'error' => $e->getMessage()
+        ]);
+        
+        return response()->json([
+            'status' => 500,
+            'message' => 'Erreur lors de la recherche',
+            'products' => []
+        ], 500);
+    }
+}
 
 }

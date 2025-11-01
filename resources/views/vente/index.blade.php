@@ -27,6 +27,9 @@
     var authId = {{ Auth::id() }};
     var ChangeStatusVente = "{{ url('ChangeStatusVente') }}";
     var GetCategorieByClass = "{{url('GetCategorieByClass')}}";
+    var getCategoriesByClass_url = "{{ route('vente.categories.by.class') }}";
+    var getVenteSubcategories_url = "{{ route('vente.subcategories', ':id') }}";
+    var searchVenteProducts_url = "{{ route('vente.search.products') }}";
 </script>
 
 <style>
@@ -250,7 +253,7 @@
                                     <ul class="validationVente"></ul>
                                 </div>
 
-                                <div class="form-group mt-2">
+                                <!-- <div class="form-group mt-2">
                                     <div class="row">
                                         <div class="col-6">
                                             <label for="" class="form-label">Produit</label>
@@ -264,7 +267,44 @@
                                     </div>
                                     
                                     
-                                </div>
+                                </div> -->
+                                <div class="row mb-3">
+    <div class="col-md-3">
+        <label for="filter_class" class="form-label">Classe</label>
+        <select class="form-select" id="filter_class" name="filter_class">
+            <option value="">Toutes les classes</option>
+            @foreach($class as $cl)
+                <option value="{{ $cl->classe }}">{{ $cl->classe }}</option>
+            @endforeach
+        </select>
+    </div>
+    
+    <div class="col-md-3">
+        <label for="filter_categorie" class="form-label">Catégorie</label>
+        <select class="form-select" id="filter_categorie" name="filter_categorie">
+            <option value="">Toutes les catégories</option>
+        </select>
+    </div>
+    
+    <div class="col-md-3">
+        <label for="filter_subcategorie" class="form-label">Famille</label>
+        <select class="form-select" id="filter_subcategorie" name="filter_subcategorie">
+            <option value="">Toutes les familles</option>
+        </select>
+    </div>
+    
+    <div class="col-md-3">
+        <label for="filter_designation" class="form-label">Désignation</label>
+        <div class="position-relative">
+            <input type="text" class="form-control" id="filter_designation" 
+                   placeholder="Rechercher un produit...">
+            <div id="designation_suggestions" class="list-group position-absolute w-100" 
+                 style="z-index: 1000; display: none; max-height: 200px; overflow-y: auto;">
+            </div>
+        </div>
+    </div>
+</div>
+                                
                                 <div class="form-group mt-2">
                                     <div class="card text-start">
                                         <div class="card-body">

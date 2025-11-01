@@ -221,7 +221,7 @@
          
 
             <!-- Action Buttons -->
-            @if(auth()->user()->can('Pertes-valider') || auth()->user()->can('Pertes-supprimer'))
+            <!-- @if(auth()->user()->can('Pertes-valider') || auth()->user()->can('Pertes-supprimer'))
             <div class="row mt-3">
                 <div class="col-12">
                     <div class="card">
@@ -255,7 +255,7 @@
                     </div>
                 </div>
             </div>
-            @endif
+            @endif -->
 
         </div>
     </div>

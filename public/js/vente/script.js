@@ -1360,5 +1360,235 @@ $('#BtnUpdateVente').on('click', function(e) {
             $('#photo_preview').html('').hide();
         }
     });
+    // ============================================
+// FILTER FUNCTIONALITY FOR VENTE
+// ============================================
+
+// Handle class filter change
+$('#filter_class').on('change', function() {
+    var selectedClass = $(this).val();
+    
+    // Reset dependent dropdowns
+    $('#filter_categorie').empty().append('<option value="">Toutes les catégories</option>');
+    $('#filter_subcategorie').empty().append('<option value="">Toutes les familles</option>');
+    
+    if (selectedClass) {
+        // Fetch categories for selected class
+        $.ajax({
+            url: '/vente/categories-by-class',
+            type: 'GET',
+            data: { class: selectedClass },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 200 && response.data.length > 0) {
+                    $.each(response.data, function(key, category) {
+                        $('#filter_categorie').append(
+                            '<option value="' + category.id + '">' + category.name + '</option>'
+                        );
+                    });
+                } else {
+                    new AWN().info("Aucune catégorie trouvée pour cette classe", {
+                        durations: { info: 3000 }
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("Error loading categories:", error);
+                new AWN().alert("Erreur lors du chargement des catégories", {
+                    durations: { alert: 5000 }
+                });
+            }
+        });
+    }
+});
+
+// Handle category filter change
+$('#filter_categorie').on('change', function() {
+    var categoryId = $(this).val();
+    
+    // Reset subcategory dropdown
+    $('#filter_subcategorie').empty().append('<option value="">Toutes les familles</option>');
+    
+    if (categoryId) {
+        // Fetch subcategories for selected category
+        $.ajax({
+            url: '/vente/subcategories/' + categoryId,
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 200 && response.subcategories.length > 0) {
+                    $.each(response.subcategories, function(key, subcategory) {
+                        $('#filter_subcategorie').append(
+                            '<option value="' + subcategory.id + '">' + subcategory.name + '</option>'
+                        );
+                    });
+                } else {
+                    new AWN().info("Aucune famille trouvée pour cette catégorie", {
+                        durations: { info: 3000 }
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("Error loading subcategories:", error);
+                new AWN().alert("Erreur lors du chargement des familles", {
+                    durations: { alert: 5000 }
+                });
+            }
+        });
+    }
+});
+
+// Handle designation (product name) filter with autocomplete
+let searchTimeout;
+$('#filter_designation').on('keyup', function() {
+    clearTimeout(searchTimeout);
+    
+    var query = $(this).val().trim();
+    
+    if (query.length < 2) {
+        $('#designation_suggestions').hide().empty();
+        return;
+    }
+    
+    searchTimeout = setTimeout(function() {
+        $.ajax({
+            url: '/vente/search-products',
+            type: 'GET',
+            data: { query: query },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 200 && response.products.length > 0) {
+                    var suggestionsHtml = '';
+                    $.each(response.products, function(key, product) {
+                        suggestionsHtml += '<a href="#" class="list-group-item list-group-item-action product-suggestion" data-name="' + product.name + '">' + product.name + '</a>';
+                    });
+                    $('#designation_suggestions').html(suggestionsHtml).show();
+                } else {
+                    $('#designation_suggestions').hide().empty();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("Error searching products:", error);
+            }
+        });
+    }, 300); // Wait 300ms after user stops typing
+});
+
+// Handle click on suggestion
+$(document).on('click', '.product-suggestion', function(e) {
+    e.preventDefault();
+    var productName = $(this).data('name');
+    $('#filter_designation').val(productName);
+    $('#designation_suggestions').hide().empty();
+    
+    // Trigger search with selected product
+    triggerProductSearch();
+});
+
+// Hide suggestions when clicking outside
+$(document).on('click', function(e) {
+    if (!$(e.target).closest('#filter_designation, #designation_suggestions').length) {
+        $('#designation_suggestions').hide();
+    }
+});
+
+// Function to trigger product search with filters
+function triggerProductSearch() {
+    let Formateur = $('#DropDown_formateur').val();
+    if (Formateur == 0) {
+        new AWN().alert('Veuillez sélectionner un demandeur', {durations: {alert: 5000}});
+        return false;
+    }
+    
+    // Get filter values
+    let filterClass = $('#filter_class').val();
+    let filterCategorie = $('#filter_categorie').val();
+    let filterSubcategorie = $('#filter_subcategorie').val();
+    let filterDesignation = $('#filter_designation').val().trim();
+    
+    // Build search parameters
+    let searchParams = {};
+    
+    if (filterClass) searchParams.filter_class = filterClass;
+    if (filterCategorie) searchParams.filter_categorie = filterCategorie;
+    if (filterSubcategorie) searchParams.filter_subcategorie = filterSubcategorie;
+    if (filterDesignation) searchParams.product = filterDesignation;
+    
+    // If no filters are set, show warning
+    if (Object.keys(searchParams).length === 0) {
+        new AWN().warning('Veuillez saisir au moins un critère de recherche', {
+            durations: {warning: 5000}
+        });
+        return false;
+    }
+    
+    // Visual feedback during search
+    $('.input_products').prop('disabled', true);
+    $('.TableProductVente_wrapper').addClass('opacity-50');
+    
+    $.ajax({
+        type: "GET",
+        url: getProduct,
+        data: searchParams,
+        dataType: "json",
+        success: function(response) {
+            // Re-enable input and remove visual feedback
+            $('.input_products').prop('disabled', false);
+            $('.TableProductVente_wrapper').removeClass('opacity-50');
+            
+            if (response.status == 200) {
+                if (response.data.length > 0) {
+                    initializeTableProduct('.TableProductVente', response.data);
+                    new AWN().success(response.data.length + ' produit(s) trouvé(s)', {
+                        durations: {success: 3000}
+                    });
+                } else {
+                    initializeTableProduct('.TableProductVente', []);
+                    new AWN().info("Aucun produit trouvé avec ces critères", {
+                        durations: {info: 5000}
+                    });
+                }
+            } else {
+                new AWN().info("Aucun produit trouvé.", {durations: {info: 5000}});
+            }
+        },
+        error: function(xhr, status, error) {
+            // Re-enable input and remove visual feedback
+            $('.input_products').prop('disabled', false);
+            $('.TableProductVente_wrapper').removeClass('opacity-50');
+            
+            console.error("Error searching for product:", error);
+            console.error("Response:", xhr.responseText);
+            
+            try {
+                const errorData = JSON.parse(xhr.responseText);
+                new AWN().alert(errorData.message || "Erreur lors de la recherche", {
+                    durations: {alert: 5000}
+                });
+            } catch (e) {
+                new AWN().alert("Erreur lors de la recherche", {
+                    durations: {alert: 5000}
+                });
+            }
+        }
+    });
+}
+
+// Trigger search when filters change
+$('#filter_class, #filter_categorie, #filter_subcategorie').on('change', function() {
+    // Only trigger search if at least one filter is set or designation has value
+    if ($(this).val() || $('#filter_designation').val().trim()) {
+        triggerProductSearch();
+    }
+});
+
+// Trigger search when pressing Enter in designation field
+$('#filter_designation').on('keydown', function(e) {
+    if (e.keyCode === 13) {
+        e.preventDefault();
+        $('#designation_suggestions').hide();
+        triggerProductSearch();
+    }
+});
 
 });
