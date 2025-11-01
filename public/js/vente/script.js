@@ -1411,43 +1411,23 @@ $('#filter_categorie').on('change', function() {
     var categoryId = $(this).val();
     let name_product = $('.input_products').val().trim();
     
-    let filter_subcategorie = $('#filter_subcategorie').val();
-    
-    // Reset subcategory dropdown
+    // Reset subcategory dropdown FIRST
     $('#filter_subcategorie').empty().append('<option value="">Toutes les familles</option>');
     
-        if (categoryId) {
-                // Fetch subcategories for selected category
-                $.get('/vente/subcategories/' + categoryId, function(response) {
+    if (categoryId) {
+        // Visual feedback during search
+        $('.input_products').prop('disabled', true);
+        $('.TableProductVente_wrapper').addClass('opacity-50');
+        
+        // Fetch subcategories for selected category
+        $.get('/vente/subcategories/' + categoryId, function(response) {
             if (response.status === 200 && response.subcategories.length > 0) {
-                $('#filter_subcategorie').empty(); // optional: clear old options
                 $.each(response.subcategories, function(key, subcategory) {
                     $('#filter_subcategorie').append(
                         '<option value="' + subcategory.id + '">' + subcategory.name + '</option>'
                     );
                 });
-
-                 $.get(getProduct, { name_product: name_product,filter_subcategorie:filter_subcategorie,category:categoryId }, function(secondResponse) {
-                    if (secondResponse.status === 200) 
-                    {
-                         $('.input_products').prop('disabled', false);
-                         $('.TableProductVente_wrapper').removeClass('opacity-50');
-                        initializeTableProduct('.TableProductVente', secondResponse.data);
-                        $('.input_products').val(""); 
-                    }
-                    else 
-                    {
-                        new AWN().info("Aucun produit trouvé.", {durations: {info: 5000}});
-                    }
-                }).fail(function(xhr, status, error) {
-                    console.error("Error in second request:", error);
-                    new AWN().alert("Erreur lors du deuxième chargement", {
-                        durations: { alert: 5000 }
-                    });
-                });
-            } 
-            else 
-                {
+            } else {
                 new AWN().info("Aucune famille trouvée pour cette catégorie", {
                     durations: { info: 3000 }
                 });
@@ -1458,7 +1438,67 @@ $('#filter_categorie').on('change', function() {
                 durations: { alert: 5000 }
             });
         });
+        
+        // NOW fetch products with ONLY category (no subcategory filter)
+        $.get(getProduct, { 
+            product: name_product,
+            filter_subcategorie: '',  // ← EMPTY! Just category filter
+            category: categoryId 
+        }, function(secondResponse) {
+            if (secondResponse.status === 200) {
+                $('.input_products').prop('disabled', false);
+                $('.TableProductVente_wrapper').removeClass('opacity-50');
+                initializeTableProduct('.TableProductVente', secondResponse.data);
+                $('.input_products').val(""); 
+            } else {
+                $('.input_products').prop('disabled', false);
+                $('.TableProductVente_wrapper').removeClass('opacity-50');
+                new AWN().info("Aucun produit trouvé.", {durations: {info: 5000}});
+            }
+        }).fail(function(xhr, status, error) {
+            $('.input_products').prop('disabled', false);
+            $('.TableProductVente_wrapper').removeClass('opacity-50');
+            console.error("Error in second request:", error);
+            new AWN().alert("Erreur lors du deuxième chargement", {
+                durations: { alert: 5000 }
+            });
+        });
+    }
+});
 
+// When user selects a subcategory, refine the product search
+$('#filter_subcategorie').on('change', function() {
+    var subcategoryId = $(this).val();
+    var categoryId = $('#filter_categorie').val();
+    let name_product = $('.input_products').val().trim();
+    
+    if (subcategoryId) {
+        // Visual feedback
+        $('.input_products').prop('disabled', true);
+        $('.TableProductVente_wrapper').addClass('opacity-50');
+        
+        $.get(getProduct, { 
+            product: name_product,
+            filter_subcategorie: subcategoryId,
+            category: categoryId 
+        }, function(response) {
+            if (response.status === 200) {
+                $('.input_products').prop('disabled', false);
+                $('.TableProductVente_wrapper').removeClass('opacity-50');
+                initializeTableProduct('.TableProductVente', response.data);
+            } else {
+                $('.input_products').prop('disabled', false);
+                $('.TableProductVente_wrapper').removeClass('opacity-50');
+                new AWN().info("Aucun produit trouvé.", {durations: {info: 5000}});
+            }
+        }).fail(function(xhr, status, error) {
+            $('.input_products').prop('disabled', false);
+            $('.TableProductVente_wrapper').removeClass('opacity-50');
+            console.error("Error loading products:", error);
+            new AWN().alert("Erreur lors du chargement des produits", {
+                durations: { alert: 5000 }
+            });
+        });
     }
 });
 

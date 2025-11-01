@@ -216,7 +216,7 @@
             </div>
 
             <!-- Section Aperçu des produits en expiration -->
-            @if($Product_Exepration->count() > 0)
+            <!-- @if($Product_Exepration->count() > 0)
             <div class="row g-3 mb-4">
                 <div class="col-12">
                     <div class="card shadow-sm border-0">
@@ -289,10 +289,10 @@
                     </div>
                 </div>
             </div>
-            @endif
+            @endif -->
 
             <!-- Section Aperçu des pertes récentes (OPTIONAL - NEW) -->
-            @if(isset($recentPertes) && $recentPertes->count() > 0)
+            <!-- @if(isset($recentPertes) && $recentPertes->count() > 0) -->
             <!-- <div class="row g-3 mb-4">
                 <div class="col-12">
                     <div class="card shadow-sm border-0">
@@ -361,7 +361,7 @@
                     </div>
                 </div>
             </div> -->
-            @endif
+            <!-- @endif -->
 
             <!-- Section Activités Récentes -->
         

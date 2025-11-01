@@ -25,91 +25,91 @@ class HomeController extends Controller
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-    public function index()
-    {
-        // Récupérer les statistiques de base
-        $totalUtilisateurs = User::whereNull('deleted_at')->count();
-        $totalFournisseurs = Fournisseur::whereNull('deleted_at')->count();
-        $totalFormations = Vente::whereNull('deleted_at')->count();
-        
-        // Commandes et achats en attente ou validés
-        $commandesEnAttente = Vente::where('status', 'Création')->count();
-        $achatsEnAttente = Achat::where('status', 'Création')->count();
-        $commandesValidees = Vente::where('status', 'Validation')->count();
-        $achatsValides = Achat::where('status', 'Validation')->count();
-        
-        // Produits dont le stock est presque épuisé (quantité <= seuil)
-        $stocksAlertes = DB::table('stock as s')
-                        ->join('products as p', 'p.id', 's.id_product')
-                        ->whereNull('s.deleted_at')
-                        ->whereRaw('s.quantite <= p.seuil')
+  
+  /**
+ * Show the application dashboard.
+ *
+ * @return \Illuminate\Contracts\Support\Renderable
+ */
+public function index()
+{
+    // Récupérer les statistiques de base
+    $totalUtilisateurs = User::whereNull('deleted_at')->count();
+    $totalFournisseurs = Fournisseur::whereNull('deleted_at')->count();
+    $totalFormations = Vente::whereNull('deleted_at')->count();
+    
+    // Commandes et achats en attente ou validés
+    $commandesEnAttente = Vente::where('status', 'Création')->count();
+    $achatsEnAttente = Achat::where('status', 'Création')->count();
+    $commandesValidees = Vente::where('status', 'Validation')->count();
+    $achatsValides = Achat::where('status', 'Validation')->count();
+    
+    // Produits dont le stock est presque épuisé (quantité <= seuil)
+    $stocksAlertes = DB::table('stock as s')
+                    ->join('products as p', 'p.id', 's.id_product')
+                    ->whereNull('s.deleted_at')
+                    ->whereRaw('s.quantite <= p.seuil')
+                    ->count();
+
+    // Produits en expiration dans les 7 prochains jours (OLD CODE - RESTORED)
+    $Product_Exepration = DB::table('products')
+                        ->where('date_expiration', '<=', DB::raw('DATE_ADD(CURDATE(), INTERVAL 7 DAY)'))
+                        ->get();
+
+    // PERTES - Statistiques des pertes de produits
+    
+    // Count of pertes by status
+    $pertesEnAttente = Perte::where('status', 'En attente')
+                        ->whereNull('deleted_at')
                         ->count();
-
-        // Produits en expiration dans les 7 prochains jours
-        $Product_Exepration = DB::table('products')
-                            ->where('date_expiration', '<=', DB::raw('DATE_ADD(CURDATE(), INTERVAL 7 DAY)'))
-                            ->where('date_expiration', '>=', DB::raw('CURDATE()'))
-                            ->get();
-
-        // PERTES - Statistiques des pertes de produits
-        
-        // Count of pertes by status
-        $pertesEnAttente = Perte::where('status', 'En attente')
-                            ->whereNull('deleted_at')
-                            ->count();
-        
-        $pertesValidees = Perte::where('status', 'Validé')
-                            ->whereNull('deleted_at')
-                            ->count();
-        
-        $pertesRefusees = Perte::where('status', 'Refusé')
-                            ->whereNull('deleted_at')
-                            ->count();
-        
-        $totalPertes = Perte::whereNull('deleted_at')->count();
-        
-        // IMPORTANT: Sum of validated pertes quantities (total damaged products)
-        $totalQuantitePertesValidees = Perte::where('status', 'Validé')
-                            ->whereNull('deleted_at')
-                            ->sum('quantite');
-        
-        // Count unique products that have validated pertes
-        $produitsAvecPertes = Perte::where('status', 'Validé')
-                            ->whereNull('deleted_at')
-                            ->distinct('id_product')
-                            ->count('id_product');
-        
-        // Récupérer les 5 pertes les plus récentes pour affichage (optionnel)
-        $recentPertes = Perte::with(['product', 'category', 'subcategory', 'unite', 'user'])
-                            ->whereNull('deleted_at')
-                            ->orderBy('created_at', 'desc')
-                            ->limit(5)
-                            ->get();
-        
-        return view('home', compact(
-            'totalUtilisateurs',
-            'totalFournisseurs',
-            'totalFormations',
-            'commandesEnAttente',
-            'achatsEnAttente',
-            'commandesValidees',
-            'achatsValides',
-            'stocksAlertes',
-            'Product_Exepration',
-            'pertesEnAttente',
-            'pertesValidees',
-            'pertesRefusees',
-            'totalPertes',
-            'totalQuantitePertesValidees', // NEW - Total quantity of damaged products
-            'produitsAvecPertes', // NEW - Unique products with pertes
-            'recentPertes'
-        ));
-    }
+    
+    $pertesValidees = Perte::where('status', 'Validé')
+                        ->whereNull('deleted_at')
+                        ->count();
+    
+    $pertesRefusees = Perte::where('status', 'Refusé')
+                        ->whereNull('deleted_at')
+                        ->count();
+    
+    $totalPertes = Perte::whereNull('deleted_at')->count();
+    
+    // IMPORTANT: Sum of validated pertes quantities (total damaged products)
+    $totalQuantitePertesValidees = Perte::where('status', 'Validé')
+                        ->whereNull('deleted_at')
+                        ->sum('quantite');
+    
+    // Count unique products that have validated pertes
+    $produitsAvecPertes = Perte::where('status', 'Validé')
+                        ->whereNull('deleted_at')
+                        ->distinct('id_product')
+                        ->count('id_product');
+    
+    // Récupérer les 5 pertes les plus récentes pour affichage (optionnel)
+    $recentPertes = Perte::with(['product', 'category', 'subcategory', 'unite', 'user'])
+                        ->whereNull('deleted_at')
+                        ->orderBy('created_at', 'desc')
+                        ->limit(5)
+                        ->get();
+    
+    return view('home', compact(
+        'totalUtilisateurs',
+        'totalFournisseurs',
+        'totalFormations',
+        'commandesEnAttente',
+        'achatsEnAttente',
+        'commandesValidees',
+        'achatsValides',
+        'stocksAlertes',
+        'Product_Exepration',
+        'pertesEnAttente',
+        'pertesValidees',
+        'pertesRefusees',
+        'totalPertes',
+        'totalQuantitePertesValidees',
+        'produitsAvecPertes',
+        'recentPertes'
+    ));
+}
     
     /**
      * Get chart data for dashboard.
