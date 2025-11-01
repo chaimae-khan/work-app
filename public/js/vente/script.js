@@ -470,67 +470,82 @@ $(document).ready(function () {
     }
             
     // Product search functionality
-    $('.input_products').on('keydown', function(e) {
-        if (e.keyCode === 13) {
-            e.preventDefault(); // Prevent form submission
-            
-            let name_product = $(this).val().trim();
-            let category     = $("#filter_categorie").val();
-            let filter_subcategorie = $('#filter_subcategorie').val();
-            if (name_product === '') {
-                new AWN().warning('Veuillez saisir un nom de produit', {durations: {warning: 5000}});
-                return false;
+   let searchTimeoutt = null;
+
+$('.input_products').on('input', function (e) {
+    e.preventDefault();
+
+    clearTimeout(searchTimeoutt); // Cancel previous timer
+
+    let name_product = $('.input_products').val().trim();
+    let category = $("#filter_categorie").val();
+    let filter_subcategorie = $('#filter_subcategorie').val();
+    let type_commande = $('#type_commande').val();
+    let Formateur = $('#DropDown_formateur').val();
+
+    if (Formateur == 0) {
+        new AWN().alert('Veuillez sélectionner un demandeur', { durations: { alert: 5000 } });
+        return false;
+    }
+
+    // If input is empty → send AJAX to load all products
+    if (name_product === '') {
+        sendAjaxRequest(name_product, category, filter_subcategorie, type_commande);
+        return; // stop here (no need debounce)
+    }
+
+    // Otherwise → search with debounce
+    searchTimeoutt = setTimeout(function () {
+        sendAjaxRequest(name_product, category, filter_subcategorie, type_commande);
+    }, 400);
+});
+
+
+// 🔹 Reusable AJAX function
+function sendAjaxRequest(name_product, category, filter_subcategorie, type_commande) {
+    // Visual feedback
+    $('.input_products').prop('disabled', true);
+    $('.TableProductVente_wrapper').addClass('opacity-50');
+
+    $.ajax({
+        type: "GET",
+        url: getProduct,
+        data: {
+            product: name_product,
+            category: category,
+            filter_subcategorie: filter_subcategorie,
+            type_commande: type_commande,
+        },
+        dataType: "json",
+        success: function (response) {
+            $('.input_products').prop('disabled', false);
+            $('.TableProductVente_wrapper').removeClass('opacity-50');
+
+            if (response.status == 200) {
+                initializeTableProduct('.TableProductVente', response.data);
+            } else {
+                new AWN().info("Aucun produit trouvé.", { durations: { info: 3000 } });
+                $('.TableProductVente').DataTable().clear().draw();
             }
-            
-            let Formateur = $('#DropDown_formateur').val();
-            if (Formateur == 0) {
-                new AWN().alert('Veuillez sélectionner un demandeur', {durations: {alert: 5000}});
-                return false;
+        },
+        error: function (xhr, status, error) {
+            $('.input_products').prop('disabled', false);
+            $('.TableProductVente_wrapper').removeClass('opacity-50');
+
+            console.error("Error searching for product:", error);
+            console.error("Response:", xhr.responseText);
+
+            try {
+                const errorData = JSON.parse(xhr.responseText);
+                new AWN().alert(errorData.message || "Erreur lors de la recherche", { durations: { alert: 5000 } });
+            } catch (e) {
+                new AWN().alert("Erreur lors de la recherche", { durations: { alert: 5000 } });
             }
-            
-            // Visual feedback during search
-            $('.input_products').prop('disabled', true);
-            $('.TableProductVente_wrapper').addClass('opacity-50');
-            
-            $.ajax({
-                type: "GET",
-                url: getProduct,
-                data: {
-                    product: name_product,
-                    category:category,
-                    filter_subcategorie:filter_subcategorie,
-                },
-                dataType: "json",
-                success: function(response) {
-                    // Re-enable input and remove visual feedback
-                    $('.input_products').prop('disabled', false);
-                    $('.TableProductVente_wrapper').removeClass('opacity-50');
-                    
-                    if (response.status == 200) {
-                        initializeTableProduct('.TableProductVente', response.data);
-                        $('.input_products').val(""); 
-                    } else {
-                        new AWN().info("Aucun produit trouvé.", {durations: {info: 5000}});
-                    }
-                },
-                error: function(xhr, status, error) {
-                    // Re-enable input and remove visual feedback
-                    $('.input_products').prop('disabled', false);
-                    $('.TableProductVente_wrapper').removeClass('opacity-50');
-                    
-                    console.error("Error searching for product:", error);
-                    console.error("Response:", xhr.responseText);
-                    
-                    try {
-                        const errorData = JSON.parse(xhr.responseText);
-                        new AWN().alert(errorData.message || "Erreur lors de la recherche", {durations: {alert: 5000}});
-                    } catch (e) {
-                        new AWN().alert("Erreur lors de la recherche", {durations: {alert: 5000}});
-                    }
-                }
-            });
         }
     });
+}
+
+
 
    function initializeTableVenteDataTable() {
     try {
@@ -647,9 +662,34 @@ $(document).ready(function () {
     // Updated toggleQuantityFieldsAndMenu function with menu attributes support
     function toggleQuantityFieldsAndMenu() {
         var commandType = $('#type_commande').val();
-       /*  alert(commandType);
-        return false; */
-
+       
+        if(commandType !=0)
+        {
+            $.ajax({
+                type: "get",
+                url: getcategorybytypemenu,
+                data: 
+                {
+                    type_commande : commandType,
+                },
+                dataType: "json",
+                success: function (response) 
+                {
+                    if(response.status == 200)
+                    {
+                        $('#filter_categorie').empty();
+                        $.each(response.data, function (index, value) 
+                        { 
+                            $('#filter_categorie').append(`<option value=${value.id}>${value.name}</option>`)     
+                        });
+                    }    
+                }
+            });
+        }
+        else
+        {
+           $('#filter_categorie').empty(); 
+        }
         
         if (commandType === 'Alimentaire') {
             // Show quantity fields, menu and menu attributes for Alimentaire
@@ -663,6 +703,8 @@ $(document).ready(function () {
             $('#plat_principal').prop('disabled', false);
             $('#accompagnement').prop('disabled', false);
             $('#dessert').prop('disabled', false);
+
+            
         } else {
             // Hide quantity fields, menu and menu attributes for Non Alimentaire and Fournitures et matériels
             $('#quantity_fields_container').hide();
