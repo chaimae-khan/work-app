@@ -12,10 +12,10 @@ $(document).ready(function () {
     Formateur = $('#DropDown_formateur').val();
         
     // Initialize tables for this user
-    if (Formateur != 0) {
+    /* if (Formateur != 0) {
         initializeTableTmpVente('.TableTmpVente', Formateur);
         GetTotalTmpByFormateurAndUserScript(Formateur);
-    }
+    } */
     
     $('.linkCallModalAddProduct').on('click', function(e) {
         $('#ModalAddProduct').modal("show");
@@ -643,6 +643,9 @@ $(document).ready(function () {
     // Updated toggleQuantityFieldsAndMenu function with menu attributes support
     function toggleQuantityFieldsAndMenu() {
         var commandType = $('#type_commande').val();
+       /*  alert(commandType);
+        return false; */
+
         
         if (commandType === 'Alimentaire') {
             // Show quantity fields, menu and menu attributes for Alimentaire

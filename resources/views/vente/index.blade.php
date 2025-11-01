@@ -129,8 +129,10 @@
                                 <div class="form-group">
                                     <label for="" class="label-form">Demandeur</label>
                                     <select name="formateur" class="form-select" id="DropDown_formateur">
-                                        <option value="0">Veuillez sélectionner un Demandeur</option>
+                                        {{-- <option value={{ Auth::user()->id }}>{{Auth::user()->nom." ".Auth::user()->prenom}}</option> --}}
+                                        {{-- <option value="0">Veuillez sélectionner un Demandeur</option> --}}
                                         @foreach ($formateurs as $formateur)
+                                            
                                             <option value="{{$formateur->id}}">{{$formateur->name}}</option>
                                         @endforeach
                                     </select>
@@ -201,7 +203,7 @@
                                 </div>
 
                                 <!-- Menu Attributes Container (show only for Alimentaire) -->
-                                <div id="menu_attributes_container" style="display: none;">
+                                <div id="menu_attributes_container" >
                                     <div class="card mt-3 bg-info-subtle">
                                         <div class="card-header">
                                             <h6 class="mb-0"><i class="mdi mdi-silverware-fork-knife"></i> Composition du Menu</h6>
@@ -252,12 +254,16 @@
                                     <div class="row">
                                         <div class="col-6">
                                             <label for="" class="form-label">Produit</label>
+                                            <input type="text" class="form-control input_products" placeholder="Entrez votre produit">
                                         </div>
-                                        <!--<div class="col-6 text-end">-->
-                                        <!--    <a href="#" class="text-danger linkCallModalAddProduct">Ajouter Produit</a>-->
-                                        <!--</div>-->
+                                        <div class="col-6">
+                                            <label for="" class="form-label">Class</label>
+                                            <input type="text" class="form-control input_products" placeholder="Entrez votre produit">
+                                        </div>
+                                       
                                     </div>
-                                    <input type="text" class="form-control input_products" placeholder="Entrez votre produit">
+                                    
+                                    
                                 </div>
                                 <div class="form-group mt-2">
                                     <div class="card text-start">
