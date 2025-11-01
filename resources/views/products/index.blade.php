@@ -129,7 +129,7 @@
                                             <th>Emplacement</th>
                                             <th>Stock</th>
                                             <th>Prix d'achat</th>
-                                            <th>Taux TVA</th>
+                                            <!-- <th>Taux TVA</th> -->
                                             <th>Seuil</th>
                                             <th>Date d'expiration</th>
                                             <th>Date de réception </th>
@@ -267,7 +267,7 @@
                                 <input type="number" step="0.01" name="seuil" class="form-control" required>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <!-- <div class="col-md-4">
                             <div class="form-group">
                                 <label>TVA</label>
                                 <select name="id_tva" class="form-control" required>
@@ -277,7 +277,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
 
                     <!-- Date d'expiration -->
@@ -460,7 +460,7 @@
                                 <input type="number" step="0.01" id="edit_seuil" name="seuil" class="form-control" required>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <!-- <div class="col-md-4">
                             <div class="form-group">
                                 <label>TVA</label>
                                 <select id="edit_id_tva" name="id_tva" class="form-control" required>
@@ -470,7 +470,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
                 </form>
             </div>
@@ -521,7 +521,7 @@
                                         <li><strong>rayon</strong> - Nom du rayon</li>
                                         <li><strong>quantite/stock</strong> - Quantité en stock</li>
                                         <li><strong>unite</strong> - Unité de mesure</li>
-                                        <li><strong>tva/taux_tva</strong> - Taux de TVA</li>
+                                        <!-- <li><strong>tva/taux_tva</strong> - Taux de TVA</li> -->
                                         <li><strong>code_article</strong> - Code article (optionnel)</li>
                                         <li><strong>seuil</strong> - Seuil d'alerte (optionnel)</li>
                                         <!-- <li><strong>code_barre</strong> - Code barre (optionnel)</li> -->

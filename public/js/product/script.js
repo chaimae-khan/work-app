@@ -60,7 +60,7 @@ function initializeDataTable() {
                 { data: 'emplacement', name: 'p.emplacement' },
                 { data: 'stock', name: 's.quantite' },
                 { data: 'price_achat', name: 'p.price_achat' },
-                { data: 'taux_taxe', name: 't.value' },
+                // { data: 'taux_taxe', name: 't.value' },
                 { data: 'seuil', name: 'p.seuil' },
                 { 
                     data: 'date_expiration', 
@@ -235,12 +235,12 @@ $('.TableProducts tbody').on('click', '.editProduct', function(e) {
             }
             
             // Set TVA and Unite from product
-            if (response.id_tva) {
-                $('#edit_id_tva').val(response.id_tva);
-            } else if (response.stock && response.stock.id_tva) {
-                // Fallback to stock if product doesn't have it yet
-                $('#edit_id_tva').val(response.stock.id_tva);
-            }
+            // if (response.id_tva) {
+            //     $('#edit_id_tva').val(response.id_tva);
+            // } else if (response.stock && response.stock.id_tva) {
+            //     // Fallback to stock if product doesn't have it yet
+            //     $('#edit_id_tva').val(response.stock.id_tva);
+            // }
             
             if (response.id_unite) {
                 $('#edit_id_unite').val(response.id_unite);

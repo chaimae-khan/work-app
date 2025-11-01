@@ -113,7 +113,12 @@ class RoleSeeder extends Seeder
             'Pertes-modifier',
             'Pertes-supprimer',
             'Pertes-valider',
-            'Pertes-voir', 
+            'Pertes-voir',
+            'Plats',
+            'Plats-liste',        
+            'Plats-ajoute',       
+            'Plats-modifier',     
+            'Plats-supprimer',     
         ]);
 
         // Économe permissions

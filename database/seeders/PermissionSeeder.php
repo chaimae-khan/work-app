@@ -108,6 +108,12 @@ class PermissionSeeder extends Seeder
             'Pertes-supprimer',
             'Pertes-valider',
             'Pertes-voir', 
+           
+            'Plats',
+            'Plats-liste',        
+            'Plats-ajoute',       
+            'Plats-modifier',     
+            'Plats-supprimer',    
             
          ];
  

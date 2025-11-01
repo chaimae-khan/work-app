@@ -27,7 +27,8 @@ use App\Http\Controllers\RouterStockController;
 use App\Http\Controllers\ConsumptionController;
 use App\Http\Controllers\FormateurStockController;
 use App\Http\Controllers\PerteController;
-
+use App\Http\Controllers\PlatsController;
+use App\Http\Controllers\PlatCompositionController;
 Auth::routes();
 
 Route::get('/', function () {
@@ -310,8 +311,31 @@ Route::get('/pertes/{id}', [PerteController::class, 'show'])->name('pertes.show'
 Route::get('/vente/categories-by-class', [VenteController::class, 'getCategoriesByClass'])->name('vente.categories.by.class');
 Route::get('/vente/subcategories/{categoryId}', [VenteController::class, 'getSubcategories'])->name('vente.subcategories');
 Route::get('/vente/search-products', [VenteController::class, 'searchProductNames'])->name('vente.search.products');
-
 Route::get('getcategorybytypemenu',[VenteController::class,'getcategorybytypemenu']);
+//plat
+Route::get('plats', [PlatsController::class, 'index']);
+Route::post('addPlat', [PlatsController::class, 'store']);
+Route::get('editPlat/{id}', [PlatsController::class, 'edit']);
+Route::post('updatePlat', [PlatsController::class, 'update']);
+Route::post('DeletePlat', [PlatsController::class, 'destroy']);
+Route::post('importPlat', [PlatsController::class, 'import']);
+Route::get('getPlatsByType', [PlatsController::class, 'getPlatsByType']);
+//
+// Plat Composition Routes
+
+    Route::get('/plat-composition', [PlatCompositionController::class, 'index'])->name('plat.composition.index');
+    Route::get('/getPlatsByTypeForComposition', [PlatCompositionController::class, 'getPlatsByTypeForComposition']);
+    Route::get('/getProductForPlat', [PlatCompositionController::class, 'getProductForPlat']);
+    Route::post('/PostInTmpPlat', [PlatCompositionController::class, 'PostInTmpPlat']);
+    Route::get('/GetTmpPlatByPlatId', [PlatCompositionController::class, 'GetTmpPlatByPlatId']);
+    Route::post('/StorePlatComposition', [PlatCompositionController::class, 'StorePlatComposition']);
+    Route::post('/UpdateQteTmpPlat', [PlatCompositionController::class, 'UpdateQteTmpPlat']);
+    Route::post('/DeleteRowsTmpPlat', [PlatCompositionController::class, 'DeleteRowsTmpPlat']);
+    Route::get('/EditPlatComposition/{id}', [PlatCompositionController::class, 'edit']);
+    Route::post('/UpdatePlatComposition', [PlatCompositionController::class, 'update']);
+    Route::post('/DeletePlatComposition', [PlatCompositionController::class, 'destroy']);
+    Route::get('/ShowPlatDetail/{id}', [PlatCompositionController::class, 'ShowPlatDetail']);
+
 
 });
 

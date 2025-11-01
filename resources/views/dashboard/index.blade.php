@@ -479,16 +479,26 @@
                              
                             </li>
                             @endcan
-                            <!-- <li class="menu-title mt-2">Paramètres</li>
+                          @can('Plats')
+    <li class="menu-title">Plats</li>
 
-                            <li>
-                                <a href="#sidebarCharts" >
-                                    <span class="mdi mdi-cog-transfer"></span>
-                                    <span>Information</span>
-                                </a>
-                            </li> -->
-                            
-                            <!-- Nouvelle section Divers à la fin du menu -->
+    <li>
+        <a class='tp-link' href="{{url('plats')}}" >
+            <i class="fa-solid fa-utensils"></i>
+            <span> Plats </span>
+        </a>
+    </li>
+@endcan
+@can('Plats')
+    <li class="menu-title">Composition des Plats</li>
+
+    <li>
+        <a class='tp-link' href="{{url('plat-composition')}}" >
+            <i class="fa-solid fa-bowl-food"></i>
+            <span> Composition des Plats </span>
+        </a>
+    </li>
+@endcan
                             @can('Taxes')
                             <li class="menu-title mt-2">Divers</li>
                             <li>
@@ -500,14 +510,14 @@
                                 <div class="collapse" id="divers">
                                     <ul class="nav-second-level">
                                   
-                                        <li>
+                                        <!-- <li>
                                            
                                             <a class='tp-link' href="{{url('tva')}}">
                                                 <i class="fa-solid fa-percent"></i>
                                                 <span>Taxe</span>
                                             </a>
                                            
-                                        </li>
+                                        </li> -->
                                         @endcan
                                         @can('Unité')
                                         <li>

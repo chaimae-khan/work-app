@@ -290,7 +290,7 @@ if ($request->filled('filter_designation')) {
              'date_expiration' => 'nullable|date',
              'quantite' => 'required|numeric',
              'seuil' => 'required|numeric',
-             'id_tva' => 'required|exists:tvas,id',
+             'id_tva' => 'nullable|exists:tvas,id',
          ], [
              'required' => 'Le champ :attribute est requis.',
              'numeric' => 'Le champ :attribute doit être un nombre.',
@@ -365,6 +365,7 @@ if ($request->filled('filter_designation')) {
              if (empty($dateExpiration)) {
                  $dateExpiration = null;
              }
+             $idTva = $request->filled('id_tva') ? $request->id_tva : 1;
              
              // Create product with the new foreign keys
              $product = Product::create([
@@ -515,7 +516,7 @@ public function update(Request $request)
         'date_expiration' => 'nullable|date',
         'quantite' => 'required|numeric',
         'seuil' => 'required|numeric',
-        'id_tva' => 'required|exists:tvas,id',
+        'id_tva' => 'nullable|exists:tvas,id',
     ], [
         'required' => 'Le champ :attribute est requis.',
         'numeric' => 'Le champ :attribute doit être un nombre.',
@@ -564,6 +565,7 @@ public function update(Request $request)
                 'message'  => 'Please selected category or subcategory',
             ]);
         }
+
          
         // Verify the relationship between category and subcategory
         $subcategory = SubCategory::find($request->id_subcategorie);
@@ -635,6 +637,7 @@ public function update(Request $request)
             'photo' => $photoPath,
             'date_expiration' => $request->date_expiration
         ]);
+        $idTva = $request->filled('id_tva') ? $request->id_tva : 1;
         
         // Update product with the new values
         $product->update([
@@ -757,503 +760,471 @@ public function update(Request $request)
 
   
     
-    public function import(Request $request)
-    {
-        // Add debug logging
-        Log::info('Starting import process');
+public function import(Request $request)
+{
+    // Add debug logging
+    Log::info('Starting import process');
+    
+    // Check if user has permission to add products
+    if (!auth()->user()->can('Products-ajoute')) {
+        return response()->json([
+            'status' => 403,
+            'message' => 'Vous n\'avez pas la permission d\'importer des produits'
+        ], 403);
+    }
+
+    // Add tracking for skipped reasons
+    $skippedReasons = [
+        'missing_fields' => 0,
+        'duplicate_name' => 0,
+        'category_not_found' => 0,
+        'subcategory_not_found' => 0,
+        'local_not_found' => 0,
+        'rayon_not_found' => 0,
+        'unite_not_found' => 0,
+        'other_errors' => 0
+    ];
+
+    $validator = Validator::make($request->all(), [
+        'file' => 'required|mimes:xlsx,xls,csv|max:10240', // 10MB limit
+    ], [
+        'required' => 'Le fichier est requis.',
+        'mimes' => 'Le fichier doit être de type: xlsx, xls ou csv.',
+        'max' => 'La taille du fichier ne doit pas dépasser 10MB.',
+    ]);
+    
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 400,
+            'errors' => $validator->messages(),
+        ], 400);
+    }
+
+    try {
+        // Increase memory limit and execution time for large files
+        ini_set('memory_limit', '512M');
+        ini_set('max_execution_time', 600); // 10 minutes
         
-        // Check if user has permission to add products
-        if (!auth()->user()->can('Products-ajoute')) {
-            return response()->json([
-                'status' => 403,
-                'message' => 'Vous n\'avez pas la permission d\'importer des produits'
-            ], 403);
+        // Instead of using storeAs which puts files in private storage
+        $file = $request->file('file');
+        $originalExtension = $file->getClientOriginalExtension();
+        
+        // Get the temporary uploaded file path directly
+        $tempPath = $file->getRealPath();
+        
+        // Create a CSV Reader instance right from the temp file
+        if ($originalExtension == 'csv') {
+            // Direct CSV handling
+            $csv = Reader::createFromPath($tempPath, 'r');
+        } else {
+            // If Excel file, convert to CSV in memory using PhpSpreadsheet
+            $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader(
+                $originalExtension == 'xlsx' ? 'Xlsx' : 'Xls'
+            );
+            $spreadsheet = $reader->load($tempPath);
+            
+            // Create a temporary CSV file in the system temp directory
+            $csvPath = sys_get_temp_dir() . '/temp_import_' . time() . '.csv';
+            $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Csv');
+            $writer->save($csvPath);
+            
+            $csv = Reader::createFromPath($csvPath, 'r');
         }
-    
-        // Add tracking for skipped reasons
-        $skippedReasons = [
-            'missing_fields' => 0,
-            'duplicate_name' => 0,
-            'category_not_found' => 0,
-            'subcategory_not_found' => 0,
-            'local_not_found' => 0,
-            'rayon_not_found' => 0,
-            'unite_not_found' => 0,
-            'tva_not_found' => 0,
-            'other_errors' => 0
-        ];
-    
-        $validator = Validator::make($request->all(), [
-            'file' => 'required|mimes:xlsx,xls,csv|max:10240', // 10MB limit
-        ], [
-            'required' => 'Le fichier est requis.',
-            'mimes' => 'Le fichier doit être de type: xlsx, xls ou csv.',
-            'max' => 'La taille du fichier ne doit pas dépasser 10MB.',
-        ]);
         
-        if ($validator->fails()) {
+        $imported = 0;
+        $skipped = 0;
+        $duplicates = [];
+        $notFoundCategories = [];
+        $notFoundSubCategories = [];
+        $notFoundLocals = [];
+        $notFoundRayons = [];
+        $notFoundUnites = [];
+
+        // Set CSV header and options
+        $csv->setHeaderOffset(0); // First row contains headers
+        $csv->setDelimiter(',');
+        
+        // Create a Statement to efficiently process the CSV in chunks
+        $stmt = Statement::create();
+        $records = $stmt->process($csv);
+        
+        // Log total rows
+        Log::info('Total rows in file: ' . count($records));
+        
+        // Get headers for mapping
+        $headers = $csv->getHeader();
+        $headersLower = array_map('strtolower', $headers);
+        
+        // Map column indices for easier access - Make case-insensitive column mapping
+        // REMOVED 'tva' from column mappings
+        $columnMappings = [
+            'name' => ['designation', 'nom', 'name'],
+            'price' => ['prix_achat', 'prix', 'price'],
+            'categorie' => ['categorie', 'category'],
+            'sousCategorie' => ['famille', 'sous-categorie', 'subcategory'],
+            'local' => ['local'],
+            'rayon' => ['rayon'],
+            'quantite' => ['quantite', 'stock', 'quantity'],
+            'seuil' => ['seuil', 'threshold'],
+            'unite' => ['unite', 'unit'],
+            'codeBarre' => ['code_barre', 'barcode'],
+            'dateExpiration' => ['date_expiration', 'expiration_date'],
+            'codeArticle' => ['code_article', 'product_code']
+        ];
+        
+        // Find indices for all needed columns
+        $indices = [];
+        foreach ($columnMappings as $key => $possibleNames) {
+            $indices[$key] = null;
+            foreach ($possibleNames as $name) {
+                $index = array_search(strtolower($name), $headersLower);
+                if ($index !== false) {
+                    $indices[$key] = $index;
+                    break;
+                }
+            }
+        }
+        
+        // Check for required columns (removed 'tva' from required)
+        $requiredColumns = [
+            'name' => $indices['name'] !== null,
+            'price' => $indices['price'] !== null,
+            'categorie' => $indices['categorie'] !== null,
+            'sousCategorie' => $indices['sousCategorie'] !== null,
+            'local' => $indices['local'] !== null,
+            'rayon' => $indices['rayon'] !== null,
+            'quantite' => $indices['quantite'] !== null,
+            'unite' => $indices['unite'] !== null,
+        ];
+        
+        $missingColumns = [];
+        foreach ($requiredColumns as $name => $exists) {
+            if (!$exists) {
+                $missingColumns[] = $name;
+            }
+        }
+        
+        if (!empty($missingColumns)) {
             return response()->json([
                 'status' => 400,
-                'errors' => $validator->messages(),
+                'message' => 'Colonnes obligatoires manquantes: ' . implode(', ', $missingColumns),
             ], 400);
         }
-    
-        try {
-            // Increase memory limit and execution time for large files
-            ini_set('memory_limit', '512M');
-            ini_set('max_execution_time', 600); // 10 minutes
+        
+        // Begin DB transaction
+        DB::beginTransaction();
+        
+        // Use small batches for commits
+        $batchSize = 100;
+        $batchCount = 0;
+        $totalRows = 0;
+        
+        // Process records
+        foreach ($records as $rowIndex => $row) {
+            $totalRows++;
+            $rowNum = $rowIndex + 2; // +2 because row 1 is header and indices start at 0
             
-            // Instead of using storeAs which puts files in private storage
-            $file = $request->file('file');
-            $originalExtension = $file->getClientOriginalExtension();
+            // Extract data from the row by header name
+            $name = trim($row[$headers[$indices['name']]] ?? '');
+            $price = floatval($row[$headers[$indices['price']]] ?? 0);
+            $categorieName = trim($row[$headers[$indices['categorie']]] ?? '');
+            $sousCategoryName = trim($row[$headers[$indices['sousCategorie']]] ?? '');
+            $localName = trim($row[$headers[$indices['local']]] ?? '');
+            $rayonName = trim($row[$headers[$indices['rayon']]] ?? '');
+            $quantite = floatval($row[$headers[$indices['quantite']]] ?? 0);
+            $seuil = isset($indices['seuil']) && isset($row[$headers[$indices['seuil']]]) ? floatval($row[$headers[$indices['seuil']]]) : 0;
+            $uniteName = trim($row[$headers[$indices['unite']]] ?? '');
             
-            // Get the temporary uploaded file path directly
-            $tempPath = $file->getRealPath();
+            // Log row processing
+            Log::debug('Processing row ' . $rowNum, [
+                'name' => $name,
+                'price' => $price,
+                'categorie' => $categorieName,
+                'famille' => $sousCategoryName,
+                'local' => $localName,
+                'rayon' => $rayonName,
+                'quantite' => $quantite,
+                'unite' => $uniteName
+            ]);
             
-            // Create a CSV Reader instance right from the temp file
-            if ($originalExtension == 'csv') {
-                // Direct CSV handling
-                $csv = Reader::createFromPath($tempPath, 'r');
-            } else {
-                // If Excel file, convert to CSV in memory using PhpSpreadsheet
-                $reader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader(
-                    $originalExtension == 'xlsx' ? 'Xlsx' : 'Xls'
-                );
-                $spreadsheet = $reader->load($tempPath);
-                
-                // Create a temporary CSV file in the system temp directory
-                $csvPath = sys_get_temp_dir() . '/temp_import_' . time() . '.csv';
-                $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Csv');
-                $writer->save($csvPath);
-                
-                $csv = Reader::createFromPath($csvPath, 'r');
-            }$imported = 0;
-            $skipped = 0;
-            $duplicates = [];
-            $notFoundCategories = [];
-            $notFoundSubCategories = [];
-            $notFoundLocals = [];
-            $notFoundRayons = [];
-            $notFoundUnites = [];
-            $notFoundTvas = [];
-    
-            // Set CSV header and options
-            $csv->setHeaderOffset(0); // First row contains headers
-            $csv->setDelimiter(',');
+            // Handle optional fields
+            $codeBarre = isset($indices['codeBarre']) && isset($row[$headers[$indices['codeBarre']]]) && !empty($row[$headers[$indices['codeBarre']]]) 
+                ? trim($row[$headers[$indices['codeBarre']]]) 
+                : null;
             
-            // Create a Statement to efficiently process the CSV in chunks
-            $stmt = Statement::create();
-            $records = $stmt->process($csv);
-            
-            // Log total rows
-            Log::info('Total rows in file: ' . count($records));
-            
-            // Get headers for mapping
-            $headers = $csv->getHeader();
-            $headersLower = array_map('strtolower', $headers);
-            
-            // Map column indices for easier access - Make case-insensitive column mapping
-            $columnMappings = [
-                'name' => ['designation', 'nom', 'name'],
-                'price' => ['prix_achat', 'prix', 'price'],
-                'categorie' => ['categorie', 'category'],
-                'sousCategorie' => ['famille', 'sous-categorie', 'subcategory'],
-                'local' => ['local'],
-                'rayon' => ['rayon'],
-                'quantite' => ['quantite', 'stock', 'quantity'],
-                'seuil' => ['seuil', 'threshold'],
-                'unite' => ['unite', 'unit'],
-                'tva' => ['tva', 'taux_tva'],
-                'codeBarre' => ['code_barre', 'barcode'],
-                'dateExpiration' => ['date_expiration', 'expiration_date'],
-                'codeArticle' => ['code_article', 'product_code']
-            ];
-            
-            // Find indices for all needed columns
-            $indices = [];
-            foreach ($columnMappings as $key => $possibleNames) {
-                $indices[$key] = null;
-                foreach ($possibleNames as $name) {
-                    $index = array_search(strtolower($name), $headersLower);
-                    if ($index !== false) {
-                        $indices[$key] = $index;
-                        break;
+            // Improved date handling
+            $dateExpiration = null;
+            if (isset($indices['dateExpiration']) && isset($row[$headers[$indices['dateExpiration']]])) {
+                $dateValue = trim($row[$headers[$indices['dateExpiration']]]);
+                if (!empty($dateValue)) {
+                    try {
+                        // Try multiple date formats
+                        $dateObj = \DateTime::createFromFormat('d/m/Y', $dateValue);
+                        if (!$dateObj) {
+                            $dateObj = \DateTime::createFromFormat('Y-m-d', $dateValue);
+                        }
+                        if (!$dateObj) {
+                            $dateObj = new \DateTime($dateValue);
+                        }
+                        if ($dateObj) {
+                            $dateExpiration = $dateObj->format('Y-m-d');
+                        }
+                    } catch (\Exception $e) {
+                        Log::debug('Date parse error: ' . $e->getMessage() . ' for value: ' . $dateValue);
+                        $dateExpiration = null;
                     }
                 }
             }
             
-            // Check for required columns
-            $requiredColumns = [
-                'name' => $indices['name'] !== null,
-                'price' => $indices['price'] !== null,
-                'categorie' => $indices['categorie'] !== null,
-                'sousCategorie' => $indices['sousCategorie'] !== null,
-                'local' => $indices['local'] !== null,
-                'rayon' => $indices['rayon'] !== null,
-                'quantite' => $indices['quantite'] !== null,
-                'unite' => $indices['unite'] !== null,
-                'tva' => $indices['tva'] !== null,
-            ];
-            
-            $missingColumns = [];
-            foreach ($requiredColumns as $name => $exists) {
-                if (!$exists) {
-                    $missingColumns[] = $name;
-                }
+            // Get code_article from CSV if available
+            $code_article = null;
+            if (isset($indices['codeArticle']) && isset($row[$headers[$indices['codeArticle']]]) && !empty($row[$headers[$indices['codeArticle']]])) {
+                $code_article = trim($row[$headers[$indices['codeArticle']]]);
             }
             
-            if (!empty($missingColumns)) {
-                return response()->json([
-                    'status' => 400,
-                    'message' => 'Colonnes obligatoires manquantes: ' . implode(', ', $missingColumns),
-                ], 400);
-            }
-            
-            // Begin DB transaction
-            DB::beginTransaction();
-            
-            // Use small batches for commits
-            $batchSize = 100;
-            $batchCount = 0;
-            $totalRows = 0;
-            
-            // Process records
-            foreach ($records as $rowIndex => $row) {
-                $totalRows++;
-                $rowNum = $rowIndex + 2; // +2 because row 1 is header and indices start at 0
-                
-                // Extract data from the row by header name
-                $name = trim($row[$headers[$indices['name']]] ?? '');
-                $price = floatval($row[$headers[$indices['price']]] ?? 0);
-                $categorieName = trim($row[$headers[$indices['categorie']]] ?? '');
-                $sousCategoryName = trim($row[$headers[$indices['sousCategorie']]] ?? '');
-                $localName = trim($row[$headers[$indices['local']]] ?? '');
-                $rayonName = trim($row[$headers[$indices['rayon']]] ?? '');
-                $quantite = floatval($row[$headers[$indices['quantite']]] ?? 0);
-                $seuil = isset($indices['seuil']) && isset($row[$headers[$indices['seuil']]]) ? floatval($row[$headers[$indices['seuil']]]) : 0;
-                $uniteName = trim($row[$headers[$indices['unite']]] ?? '');
-                $tvaValue = isset($indices['tva']) && isset($row[$headers[$indices['tva']]]) ? trim($row[$headers[$indices['tva']]]) : '';
-                
-                // Log row processing
-                Log::debug('Processing row ' . $rowNum, [
+            // Skip empty rows or invalid data (removed tvaValue check)
+            if (empty($name) || $price <= 0 || empty($categorieName) || empty($sousCategoryName) || 
+                empty($localName) || empty($rayonName) || $quantite < 0 || empty($uniteName)) {
+                Log::debug('Skipping row with missing required fields', [
+                    'row' => $rowNum,
                     'name' => $name,
                     'price' => $price,
                     'categorie' => $categorieName,
-                    'famille' => $sousCategoryName,
-                    'local' => $localName,
-                    'rayon' => $rayonName,
-                    'quantite' => $quantite,
-                    'unite' => $uniteName,
-                    'tva' => $tvaValue
+                ]);
+                $skipped++;
+                $skippedReasons['missing_fields']++;
+                
+                // Log skip
+                Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
+                
+                continue;
+            }
+            
+            // Check if product with this name already exists - CASE INSENSITIVE
+            $nameExists = Product::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($name))])->exists();
+            
+            if ($nameExists) {
+                $duplicates[] = $name;
+                $skipped++;
+                $skippedReasons['duplicate_name']++;
+                
+                // Log skip
+                Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
+                
+                continue;
+            }
+            
+            // Commit in batches to avoid transaction timeout
+            if ($batchCount > 0 && $batchCount % $batchSize === 0) {
+                DB::commit();
+                DB::beginTransaction();
+            }
+            
+            try {
+                // CASE INSENSITIVE LOOKUP FOR ALL RELATED ENTITIES
+                
+                // Find category ID - CASE INSENSITIVE
+                $category = Category::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($categorieName))])->first();
+                if (!$category) {
+                    if (!in_array($categorieName, $notFoundCategories)) {
+                        $notFoundCategories[] = $categorieName;
+                    }
+                    $skipped++;
+                    $skippedReasons['category_not_found']++;
+                    
+                    // Log skip
+                    Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
+                    
+                    continue;
+                }
+                
+                // Find subcategory ID - CASE INSENSITIVE
+                $subcategory = SubCategory::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($sousCategoryName))])
+                    ->where('id_categorie', $category->id)
+                    ->first();
+                
+                if (!$subcategory) {
+                    $notFoundSubCategories[] = $sousCategoryName . ' (dans categorie ' . $categorieName . ')';
+                    $skipped++;
+                    $skippedReasons['subcategory_not_found']++;
+                    
+                    // Log skip
+                    Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
+                    
+                    continue;
+                }
+                
+                // Find local ID - CASE INSENSITIVE
+                $local = Local::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($localName))])->first();
+                if (!$local) {
+                    $notFoundLocals[] = $localName;
+                    $skipped++;
+                    $skippedReasons['local_not_found']++;
+                    
+                    // Log skip
+                    Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
+                    
+                    continue;
+                }
+                
+                // Find rayon ID - CASE INSENSITIVE
+                $rayon = Rayon::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($rayonName))])
+                    ->where('id_local', $local->id)
+                    ->first();
+                
+                if (!$rayon) {
+                    $notFoundRayons[] = $rayonName . ' (dans local ' . $localName . ')';
+                    $skipped++;
+                    $skippedReasons['rayon_not_found']++;
+                    
+                    // Log skip
+                    Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
+                    
+                    continue;
+                }
+                
+                // Find unite ID - CASE INSENSITIVE
+                $unite = Unite::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($uniteName))])->first();
+                if (!$unite) {
+                    $notFoundUnites[] = $uniteName;
+                    $skipped++;
+                    $skippedReasons['unite_not_found']++;
+                    
+                    // Log skip
+                    Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
+                    
+                    continue;
+                }
+                
+                // ALWAYS USE id_tva = 1 for all imported products
+                $tvaId = 1;
+                
+                // Generate code_article only if not provided in CSV
+                if (empty($code_article)) {
+                    $code_article = Product::generateCodeArticle(
+                        $category->name, 
+                        $subcategory->name
+                    );
+                }
+                
+                // Create product
+                $product = Product::create([
+                    'name' => $name,
+                    'code_article' => $code_article,
+                    'price_achat' => $price,
+                    'id_categorie' => $category->id,
+                    'id_subcategorie' => $subcategory->id,
+                    'id_local' => $local->id,
+                    'id_rayon' => $rayon->id,
+                    'seuil' => $seuil,
+                    'code_barre' => $codeBarre,
+                    'photo' => null, // Always set photo to null during import
+                    'date_expiration' => $dateExpiration,
+                    'id_tva' => $tvaId,       // Always 1
+                    'id_unite' => $unite->id,
+                    'id_user' => Auth::id(),
                 ]);
                 
-                // Handle optional fields
-                $codeBarre = isset($indices['codeBarre']) && isset($row[$headers[$indices['codeBarre']]]) && !empty($row[$headers[$indices['codeBarre']]]) 
-                    ? trim($row[$headers[$indices['codeBarre']]]) 
-                    : null;
+                // Update emplacement
+                $product->emplacement = $product->generateEmplacement();
+                $product->save();
                 
-                // Improved date handling
-                $dateExpiration = null;
-                if (isset($indices['dateExpiration']) && isset($row[$headers[$indices['dateExpiration']]])) {
-                    $dateValue = trim($row[$headers[$indices['dateExpiration']]]);
-                    if (!empty($dateValue)) {
-                        try {
-                            // Try multiple date formats
-                            $dateObj = \DateTime::createFromFormat('d/m/Y', $dateValue);
-                            if (!$dateObj) {
-                                $dateObj = \DateTime::createFromFormat('Y-m-d', $dateValue);
-                            }
-                            if (!$dateObj) {
-                                $dateObj = new \DateTime($dateValue);
-                            }
-                            if ($dateObj) {
-                                $dateExpiration = $dateObj->format('Y-m-d');
-                            }
-                        } catch (\Exception $e) {
-                            Log::debug('Date parse error: ' . $e->getMessage() . ' for value: ' . $dateValue);
-                            $dateExpiration = null;
-                        }
-                    }
-                }
+                // Create stock entry
+                Stock::create([
+                    'id_product' => $product->id,
+                    'id_tva' => $tvaId,       // Always 1
+                    'id_unite' => $unite->id,
+                    'quantite' => $quantite,
+                ]);
                 
-                // Get code_article from CSV if available
-                $code_article = null;
-                if (isset($indices['codeArticle']) && isset($row[$headers[$indices['codeArticle']]]) && !empty($row[$headers[$indices['codeArticle']]])) {
-                    $code_article = trim($row[$headers[$indices['codeArticle']]]);
-                }
+                $imported++;
+                $batchCount++;
                 
-                // Skip empty rows or invalid data
-                if (empty($name) || $price <= 0 || empty($categorieName) || empty($sousCategoryName) || 
-                    empty($localName) || empty($rayonName) || $quantite < 0 || empty($uniteName) || empty($tvaValue)) {
-                    Log::debug('Skipping row with missing required fields', [
-                        'row' => $rowNum,
-                        'name' => $name,
-                        'price' => $price,
-                        'categorie' => $categorieName,
-                    ]);
-                    $skipped++;
-                    $skippedReasons['missing_fields']++;
-                    
-                    // Log skip
-                    Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
-                    
-                    continue;
-                }
+            } catch (\Exception $e) {
+                Log::error('Erreur importation produit ligne ' . $rowNum . ': ' . $e->getMessage(), [
+                    'trace' => $e->getTraceAsString()
+                ]);
+                $skipped++;
+                $skippedReasons['other_errors']++;
                 
-                // Check if product with this name already exists - CASE INSENSITIVE
-                $nameExists = Product::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($name))])->exists();
+                // Log skip
+                Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
                 
-                if ($nameExists) {
-                    $duplicates[] = $name;
-                    $skipped++;
-                    $skippedReasons['duplicate_name']++;
-                    
-                    // Log skip
-                    Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
-                    
-                    continue;
-                }
-                
-                // Commit in batches to avoid transaction timeout
-                if ($batchCount > 0 && $batchCount % $batchSize === 0) {
-                    DB::commit();
-                    DB::beginTransaction();
-                }
-                
-                try {
-                    // CASE INSENSITIVE LOOKUP FOR ALL RELATED ENTITIES
-                    
-                    // Find category ID - CASE INSENSITIVE
-                    $category = Category::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($categorieName))])->first();
-                    if (!$category) {
-                        if (!in_array($categorieName, $notFoundCategories)) {
-                            $notFoundCategories[] = $categorieName;
-                        }
-                        $skipped++;
-                        $skippedReasons['category_not_found']++;
-                        
-                        // Log skip
-                        Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
-                        
-                        continue;
-                    }
-                    
-                    // Find subcategory ID - CASE INSENSITIVE
-                    $subcategory = SubCategory::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($sousCategoryName))])
-                        ->where('id_categorie', $category->id)
-                        ->first();
-                    
-                    if (!$subcategory) {
-                        $notFoundSubCategories[] = $sousCategoryName . ' (dans categorie ' . $categorieName . ')';
-                        $skipped++;
-                        $skippedReasons['subcategory_not_found']++;
-                        
-                        // Log skip
-                        Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
-                        
-                        continue;
-                    }
-                    
-                    // Find local ID - CASE INSENSITIVE
-                    $local = Local::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($localName))])->first();
-                    if (!$local) {
-                        $notFoundLocals[] = $localName;
-                        $skipped++;
-                        $skippedReasons['local_not_found']++;
-                        
-                        // Log skip
-                        Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
-                        
-                        continue;
-                    }
-                    
-                    // Find rayon ID - CASE INSENSITIVE
-                    $rayon = Rayon::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($rayonName))])
-                        ->where('id_local', $local->id)
-                        ->first();
-                    
-                    if (!$rayon) {
-                        $notFoundRayons[] = $rayonName . ' (dans local ' . $localName . ')';
-                        $skipped++;
-                        $skippedReasons['rayon_not_found']++;
-                        
-                        // Log skip
-                        Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
-                        
-                        continue;
-                    }
-                    
-                    // Find unite ID - CASE INSENSITIVE
-                    $unite = Unite::whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($uniteName))])->first();
-                    if (!$unite) {
-                        $notFoundUnites[] = $uniteName;
-                        $skipped++;
-                        $skippedReasons['unite_not_found']++;
-                        
-                        // Log skip
-                        Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
-                        
-                        continue;
-                    }
-                    
-                    // Find TVA ID - IMPROVED TVA HANDLING AND CASE INSENSITIVE
-                    $tvaValue = str_replace('%', '', $tvaValue);
-                    $numericTva = floatval($tvaValue);
-                    
-                    // Try different formats - direct value, percentage, or decimal
-                    $tva = Tva::where('value', $numericTva)->first();
-                    
-                    // If not found and value is > 1, try as percentage (e.g., 20 -> 0.2)
-                    if (!$tva && $numericTva > 1) {
-                        $tva = Tva::where('value', $numericTva / 100)->first();
-                    }
-                    
-                    // If not found and value is < 1, try as decimal (e.g., 0.2 -> 20)
-                    if (!$tva && $numericTva < 1) {
-                        $tva = Tva::where('value', $numericTva * 100)->first();
-                    }
-                    
-                    if (!$tva) {
-                        $notFoundTvas[] = $tvaValue;
-                        $skipped++;
-                        $skippedReasons['tva_not_found']++;
-                        
-                        // Log skip
-                        Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
-                        
-                        continue;
-                    }
-                    
-                    // Generate code_article only if not provided in CSV
-                    if (empty($code_article)) {
-                        $code_article = Product::generateCodeArticle(
-                            $category->name, 
-                            $subcategory->name
-                        );
-                    }
-                    
-                    // Create product
-                    $product = Product::create([
-                        'name' => $name,
-                        'code_article' => $code_article,
-                        'price_achat' => $price,
-                        'id_categorie' => $category->id,
-                        'id_subcategorie' => $subcategory->id,
-                        'id_local' => $local->id,
-                        'id_rayon' => $rayon->id,
-                        'seuil' => $seuil,
-                        'code_barre' => $codeBarre,
-                        'photo' => null, // Always set photo to null during import
-                        'date_expiration' => $dateExpiration,
-                        'id_tva' => $tva->id,
-                        'id_unite' => $unite->id,
-                        'id_user' => Auth::id(),
-                    ]);
-                    
-                    // Update emplacement
-                    $product->emplacement = $product->generateEmplacement();
-                    $product->save();
-                    
-                    // Create stock entry
-                    Stock::create([
-                        'id_product' => $product->id,
-                        'id_tva' => $tva->id,
-                        'id_unite' => $unite->id,
-                        'quantite' => $quantite,
-                    ]);
-                    
-                    $imported++;
-                    $batchCount++;
-                    
-                } catch (\Exception $e) {
-                    Log::error('Erreur importation produit ligne ' . $rowNum . ': ' . $e->getMessage(), [
-                        'trace' => $e->getTraceAsString()
-                    ]);
-                    $skipped++;
-                    $skippedReasons['other_errors']++;
-                    
-                    // Log skip
-                    Log::info('Row skipped. Current counts: imported=' . $imported . ', skipped=' . $skipped);
-                    
-                    continue;
-                }
-                
-                // Free memory periodically
-                if ($totalRows % 100 == 0) {
-                    gc_collect_cycles();
-                }
+                continue;
             }
             
-            // Log final statistics
-            Log::info('Import completed. Final counts: imported=' . $imported . ', skipped=' . $skipped);
-            Log::info('Skipped reasons:', $skippedReasons);
-            
-            // Commit any remaining records
-            if ($imported > 0) {
-                DB::commit();
-            } else {
-                DB::rollBack();
+            // Free memory periodically
+            if ($totalRows % 100 == 0) {
+                gc_collect_cycles();
             }
-            
-            // Clean up temporary files if created
-            if (isset($csvPath) && file_exists($csvPath)) {
-                @unlink($csvPath);
-            }
-            
-            $message = $imported . ' produits ont été importés avec succès.';
-            if ($skipped > 0) {
-                $message .= ' ' . $skipped . ' ont été ignorés (doublons, données invalides ou relations inexistantes).';
-            }
-            
-            if (!empty($notFoundCategories)) {
-                $message .= ' Catégories non trouvées: ' . implode(', ', array_unique($notFoundCategories)) . '.';
-            }
-            
-            if (!empty($notFoundSubCategories)) {
-                $message .= ' Familles non trouvées: ' . implode(', ', array_unique($notFoundSubCategories)) . '.';
-            }
-            
-            if (!empty($notFoundLocals)) {
-                $message .= ' Locaux non trouvés: ' . implode(', ', array_unique($notFoundLocals)) . '.';
-            }
-            
-            if (!empty($notFoundRayons)) {
-                $message .= ' Rayons non trouvés: ' . implode(', ', array_unique($notFoundRayons)) . '.';
-            }
-            
-            if (!empty($notFoundUnites)) {
-                $message .= ' Unités non trouvées: ' . implode(', ', array_unique($notFoundUnites)) . '.';
-            }
-            
-            if (!empty($notFoundTvas)) {
-                $message .= ' TVAs non trouvées: ' . implode(', ', array_unique($notFoundTvas)) . '.';
-            }
-            
-            return response()->json([
-                'status' => 200,
-                'message' => $message,
-                'imported' => $imported,
-                'skipped' => $skipped,
-                'duplicates' => $duplicates,
-                'total_rows' => $totalRows,
-                'skipped_reasons' => $skippedReasons
-            ]);
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            
-            Log::error('Erreur lors de l\'importation des produits: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
-                'status' => 500,
-                'message' => 'Une erreur est survenue lors de l\'importation: ' . $e->getMessage(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile()
-            ], 500);
         }
+        
+        // Log final statistics
+        Log::info('Import completed. Final counts: imported=' . $imported . ', skipped=' . $skipped);
+        Log::info('Skipped reasons:', $skippedReasons);
+        
+        // Commit any remaining records
+        if ($imported > 0) {
+            DB::commit();
+        } else {
+            DB::rollBack();
+        }
+        
+        // Clean up temporary files if created
+        if (isset($csvPath) && file_exists($csvPath)) {
+            @unlink($csvPath);
+        }
+        
+        $message = $imported . ' produits ont été importés avec succès.';
+        if ($skipped > 0) {
+            $message .= ' ' . $skipped . ' ont été ignorés (doublons, données invalides ou relations inexistantes).';
+        }
+        
+        if (!empty($notFoundCategories)) {
+            $message .= ' Catégories non trouvées: ' . implode(', ', array_unique($notFoundCategories)) . '.';
+        }
+        
+        if (!empty($notFoundSubCategories)) {
+            $message .= ' Familles non trouvées: ' . implode(', ', array_unique($notFoundSubCategories)) . '.';
+        }
+        
+        if (!empty($notFoundLocals)) {
+            $message .= ' Locaux non trouvés: ' . implode(', ', array_unique($notFoundLocals)) . '.';
+        }
+        
+        if (!empty($notFoundRayons)) {
+            $message .= ' Rayons non trouvés: ' . implode(', ', array_unique($notFoundRayons)) . '.';
+        }
+        
+        if (!empty($notFoundUnites)) {
+            $message .= ' Unités non trouvées: ' . implode(', ', array_unique($notFoundUnites)) . '.';
+        }
+        
+        return response()->json([
+            'status' => 200,
+            'message' => $message,
+            'imported' => $imported,
+            'skipped' => $skipped,
+            'duplicates' => $duplicates,
+            'total_rows' => $totalRows,
+            'skipped_reasons' => $skippedReasons
+        ]);
+        
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        Log::error('Erreur lors de l\'importation des produits: ' . $e->getMessage(), [
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'status' => 500,
+            'message' => 'Une erreur est survenue lors de l\'importation: ' . $e->getMessage(),
+            'line' => $e->getLine(),
+            'file' => $e->getFile()
+        ], 500);
     }
+}
     /**
  * Search product names for autocomplete
  */
