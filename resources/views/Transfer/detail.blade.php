@@ -57,7 +57,7 @@
             </div>
 
             <!-- Transfer Direction Card -->
-            <div class="row mb-3">
+            <!-- <div class="row mb-3">
                 <div class="col-12">
                     <div class="transfer-direction">
                         <div class="row align-items-center">
@@ -81,7 +81,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
 
             <!-- Transfer Information Card -->
             <div class="row">
