@@ -475,6 +475,8 @@ $(document).ready(function () {
             e.preventDefault(); // Prevent form submission
             
             let name_product = $(this).val().trim();
+            let category     = $("#filter_categorie").val();
+            let filter_subcategorie = $('#filter_subcategorie').val();
             if (name_product === '') {
                 new AWN().warning('Veuillez saisir un nom de produit', {durations: {warning: 5000}});
                 return false;
@@ -494,7 +496,9 @@ $(document).ready(function () {
                 type: "GET",
                 url: getProduct,
                 data: {
-                    product: name_product
+                    product: name_product,
+                    category:category,
+                    filter_subcategorie:filter_subcategorie,
                 },
                 dataType: "json",
                 success: function(response) {
@@ -1405,36 +1409,56 @@ $('#filter_class').on('change', function() {
 // Handle category filter change
 $('#filter_categorie').on('change', function() {
     var categoryId = $(this).val();
+    let name_product = $('.input_products').val().trim();
+    
+    let filter_subcategorie = $('#filter_subcategorie').val();
     
     // Reset subcategory dropdown
     $('#filter_subcategorie').empty().append('<option value="">Toutes les familles</option>');
     
-    if (categoryId) {
-        // Fetch subcategories for selected category
-        $.ajax({
-            url: '/vente/subcategories/' + categoryId,
-            type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 200 && response.subcategories.length > 0) {
-                    $.each(response.subcategories, function(key, subcategory) {
-                        $('#filter_subcategorie').append(
-                            '<option value="' + subcategory.id + '">' + subcategory.name + '</option>'
-                        );
+        if (categoryId) {
+                // Fetch subcategories for selected category
+                $.get('/vente/subcategories/' + categoryId, function(response) {
+            if (response.status === 200 && response.subcategories.length > 0) {
+                $('#filter_subcategorie').empty(); // optional: clear old options
+                $.each(response.subcategories, function(key, subcategory) {
+                    $('#filter_subcategorie').append(
+                        '<option value="' + subcategory.id + '">' + subcategory.name + '</option>'
+                    );
+                });
+
+                 $.get(getProduct, { name_product: name_product,filter_subcategorie:filter_subcategorie,category:categoryId }, function(secondResponse) {
+                    if (secondResponse.status === 200) 
+                    {
+                         $('.input_products').prop('disabled', false);
+                         $('.TableProductVente_wrapper').removeClass('opacity-50');
+                        initializeTableProduct('.TableProductVente', secondResponse.data);
+                        $('.input_products').val(""); 
+                    }
+                    else 
+                    {
+                        new AWN().info("Aucun produit trouvé.", {durations: {info: 5000}});
+                    }
+                }).fail(function(xhr, status, error) {
+                    console.error("Error in second request:", error);
+                    new AWN().alert("Erreur lors du deuxième chargement", {
+                        durations: { alert: 5000 }
                     });
-                } else {
-                    new AWN().info("Aucune famille trouvée pour cette catégorie", {
-                        durations: { info: 3000 }
-                    });
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error("Error loading subcategories:", error);
-                new AWN().alert("Erreur lors du chargement des familles", {
-                    durations: { alert: 5000 }
+                });
+            } 
+            else 
+                {
+                new AWN().info("Aucune famille trouvée pour cette catégorie", {
+                    durations: { info: 3000 }
                 });
             }
+        }).fail(function(xhr, status, error) {
+            console.error("Error loading subcategories:", error);
+            new AWN().alert("Erreur lors du chargement des familles", {
+                durations: { alert: 5000 }
+            });
         });
+
     }
 });
 

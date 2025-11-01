@@ -146,6 +146,7 @@ class VenteController extends Controller
 {
     try {
         $name_product = $request->product;
+       
     
         if ($request->ajax()) {
             $query = DB::table('products as p')
@@ -1651,11 +1652,15 @@ public function getSubcategories($categoryId)
             ->select('id', 'name')
             ->orderBy('name', 'asc')
             ->get();
+
+
+        
         
         return response()->json([
             'status' => 200,
             'subcategories' => $subcategories
         ]);
+
     } catch (\Exception $e) {
         \Log::error('Error fetching subcategories', [
             'error' => $e->getMessage(),

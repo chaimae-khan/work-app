@@ -172,19 +172,35 @@ class AchatController extends Controller
     public function getProduct(Request $request)
     {
         $name_product = $request->product;
-    
+        $category     = $request->category;
+        $filter_subcategorie = $request->filter_subcategorie;
+
+        
         if ($request->ajax()) {
             
             $Data_Product = DB::table('products as p')
                 ->join('stock as s', 'p.id', '=', 's.id_product')
                 ->join('locals as l', 'p.id_local', '=', 'l.id')
-                ->where('p.name', 'like', '%' . $name_product . '%')
+                /* ->where('p.name', 'like', '%' . $name_product . '%') */
                 ->whereNull('p.deleted_at')
-                ->select('p.name', 's.quantite', 'p.seuil', 'p.price_achat', 'l.name as name_local','p.id','p.price_vente')
-                ->get();
+                ->select('p.name', 's.quantite', 'p.seuil', 'p.price_achat', 'l.name as name_local','p.id','p.price_vente');
+                /* ->get(); */
+            $Data_Product->when($name_product, function ($q, $name_product) {
+                return $q->where('p.name', 'like', '%' . $name_product . '%');
+            });
+            $Data_Product->when($category, function ($c, $category) {
+                return $c->where('p.id_categorie', 'like', '%' . $category . '%');
+            });
+            $Data_Product->when($filter_subcategorie, function ($s, $filter_subcategorie) {
+                return $s->where('p.id_subcategorie', 'like', '%' . $filter_subcategorie . '%');
+            });
+
+            $results = $Data_Product->get();
+           // dd($request);
+
             return response()->json([
                 'status' => 200,
-                'data'   => $Data_Product
+                'data'   => $results
             ]);
         }
     }

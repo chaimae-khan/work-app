@@ -269,41 +269,41 @@
                                     
                                 </div> -->
                                 <div class="row mb-3">
-    <div class="col-md-3">
-        <label for="filter_class" class="form-label">Classe</label>
-        <select class="form-select" id="filter_class" name="filter_class">
-            <option value="">Toutes les classes</option>
-            @foreach($class as $cl)
-                <option value="{{ $cl->classe }}">{{ $cl->classe }}</option>
-            @endforeach
-        </select>
-    </div>
+                                    {{-- <div class="col-md-3">
+                                        <label for="filter_class" class="form-label">Classe</label>
+                                        <select class="form-select" id="filter_class" name="filter_class">
+                                            <option value="">Toutes les classes</option>
+                                            @foreach($class as $cl)
+                                                <option value="{{ $cl->classe }}">{{ $cl->classe }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div> --}}
+                                    
+                                    <div class="col-md-4">
+                                        <label for="filter_categorie" class="form-label">Catégorie</label>
+                                        <select class="form-select" id="filter_categorie" name="filter_categorie">
+                                            <option value="">Toutes les catégories</option>
+                                            @foreach ($categories as $item)
+                                                <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <label for="filter_subcategorie" class="form-label">Famille</label>
+                                        <select class="form-select" id="filter_subcategorie" name="filter_subcategorie">
+                                            <option value="">Toutes les familles</option>
+                                        </select>
+                                    </div>
     
-    <div class="col-md-3">
-        <label for="filter_categorie" class="form-label">Catégorie</label>
-        <select class="form-select" id="filter_categorie" name="filter_categorie">
-            <option value="">Toutes les catégories</option>
-        </select>
-    </div>
-    
-    <div class="col-md-3">
-        <label for="filter_subcategorie" class="form-label">Famille</label>
-        <select class="form-select" id="filter_subcategorie" name="filter_subcategorie">
-            <option value="">Toutes les familles</option>
-        </select>
-    </div>
-    
-    <div class="col-md-3">
-        <label for="filter_designation" class="form-label">Désignation</label>
-        <div class="position-relative">
-            <input type="text" class="form-control" id="filter_designation" 
-                   placeholder="Rechercher un produit...">
-            <div id="designation_suggestions" class="list-group position-absolute w-100" 
-                 style="z-index: 1000; display: none; max-height: 200px; overflow-y: auto;">
-            </div>
-        </div>
-    </div>
-</div>
+                                    <div class="col-md-4">
+                                        <label for="filter_designation" class="form-label">Désignation</label>
+                                        <div class="position-relative">
+                                            <input type="text" class="form-control input_products"  placeholder="Rechercher un produit...">
+                                           
+                                        </div>
+                                    </div>
+                                </div>
                                 
                                 <div class="form-group mt-2">
                                     <div class="card text-start">
