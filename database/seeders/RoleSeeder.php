@@ -109,6 +109,11 @@ class RoleSeeder extends Seeder
             'Voir-Consommation-Complète',
             'Voir-Rapport-Mensuel-Consommation',
             'Voir-Stock-Demandeur',
+            'Pertes-ajouter',
+            'Pertes-modifier',
+            'Pertes-supprimer',
+            'Pertes-valider',
+            'Pertes-voir', 
         ]);
 
         // Économe permissions

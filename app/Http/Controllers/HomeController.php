@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User; // Changed from Client to User
+use App\Models\User;
 use App\Models\Fournisseur;
 use App\Models\Product;
 use App\Models\Vente;
 use App\Models\Achat;
 use App\Models\Stock;
+use App\Models\Perte;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-
 
 class HomeController extends Controller
 {
@@ -33,7 +33,7 @@ class HomeController extends Controller
     public function index()
     {
         // Récupérer les statistiques de base
-        $totalUtilisateurs = User::whereNull('deleted_at')->count(); // Changed variable name and model
+        $totalUtilisateurs = User::whereNull('deleted_at')->count();
         $totalFournisseurs = Fournisseur::whereNull('deleted_at')->count();
         $totalFormations = Vente::whereNull('deleted_at')->count();
         
@@ -50,16 +50,49 @@ class HomeController extends Controller
                         ->whereRaw('s.quantite <= p.seuil')
                         ->count();
 
-
+        // Produits en expiration dans les 7 prochains jours
         $Product_Exepration = DB::table('products')
                             ->where('date_expiration', '<=', DB::raw('DATE_ADD(CURDATE(), INTERVAL 7 DAY)'))
+                            ->where('date_expiration', '>=', DB::raw('CURDATE()'))
                             ->get();
 
-
+        // PERTES - Statistiques des pertes de produits
         
+        // Count of pertes by status
+        $pertesEnAttente = Perte::where('status', 'En attente')
+                            ->whereNull('deleted_at')
+                            ->count();
+        
+        $pertesValidees = Perte::where('status', 'Validé')
+                            ->whereNull('deleted_at')
+                            ->count();
+        
+        $pertesRefusees = Perte::where('status', 'Refusé')
+                            ->whereNull('deleted_at')
+                            ->count();
+        
+        $totalPertes = Perte::whereNull('deleted_at')->count();
+        
+        // IMPORTANT: Sum of validated pertes quantities (total damaged products)
+        $totalQuantitePertesValidees = Perte::where('status', 'Validé')
+                            ->whereNull('deleted_at')
+                            ->sum('quantite');
+        
+        // Count unique products that have validated pertes
+        $produitsAvecPertes = Perte::where('status', 'Validé')
+                            ->whereNull('deleted_at')
+                            ->distinct('id_product')
+                            ->count('id_product');
+        
+        // Récupérer les 5 pertes les plus récentes pour affichage (optionnel)
+        $recentPertes = Perte::with(['product', 'category', 'subcategory', 'unite', 'user'])
+                            ->whereNull('deleted_at')
+                            ->orderBy('created_at', 'desc')
+                            ->limit(5)
+                            ->get();
         
         return view('home', compact(
-            'totalUtilisateurs', // Changed variable name
+            'totalUtilisateurs',
             'totalFournisseurs',
             'totalFormations',
             'commandesEnAttente',
@@ -67,7 +100,14 @@ class HomeController extends Controller
             'commandesValidees',
             'achatsValides',
             'stocksAlertes',
-            'Product_Exepration'
+            'Product_Exepration',
+            'pertesEnAttente',
+            'pertesValidees',
+            'pertesRefusees',
+            'totalPertes',
+            'totalQuantitePertesValidees', // NEW - Total quantity of damaged products
+            'produitsAvecPertes', // NEW - Unique products with pertes
+            'recentPertes'
         ));
     }
     
@@ -76,7 +116,6 @@ class HomeController extends Controller
      */
     public function getChartData()
     {
-        // Le reste du code reste inchangé
         $mois = [];
         $labels = [];
         
@@ -110,19 +149,35 @@ class HomeController extends Controller
             ->keyBy('mois')
             ->toArray();
         
+        // Données des pertes - SUM of quantities (not count)
+        $pertesMensuelles = Perte::select(
+                DB::raw('SUM(quantite) as total'), // Changed from COUNT to SUM
+                DB::raw("DATE_FORMAT(created_at, '%Y-%m') as mois")
+            )
+            ->whereNull('deleted_at')
+            ->where('status', 'Validé') // Only count validated pertes
+            ->whereRaw('created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)')
+            ->groupBy('mois')
+            ->get()
+            ->keyBy('mois')
+            ->toArray();
+        
         // Formatage pour le graphique
         $ventesData = [];
         $achatsData = [];
+        $pertesData = [];
         
         foreach ($mois as $m) {
             $ventesData[] = isset($ventesMensuelles[$m]) ? (int)$ventesMensuelles[$m]['total'] : 0;
             $achatsData[] = isset($achatsMensuels[$m]) ? (int)$achatsMensuels[$m]['total'] : 0;
+            $pertesData[] = isset($pertesMensuelles[$m]) ? (float)$pertesMensuelles[$m]['total'] : 0;
         }
         
         return response()->json([
             'labels' => $labels,
             'ventes' => $ventesData,
             'achats' => $achatsData,
+            'pertes' => $pertesData,
         ]);
     }
     
@@ -131,7 +186,6 @@ class HomeController extends Controller
      */
     public function getStatusData()
     {
-        // Le reste du code reste inchangé
         // Récupération des données de statut des ventes
         $ventesStatus = [
             'creation' => Vente::where('status', 'Création')->count(),
@@ -148,9 +202,19 @@ class HomeController extends Controller
             'reception' => Achat::where('status', 'Réception')->count(),
         ];
         
+        // Récupération des données de statut des pertes
+        $pertesStatus = [
+            'en_attente' => Perte::where('status', 'En attente')->whereNull('deleted_at')->count(),
+            'valide' => Perte::where('status', 'Validé')->whereNull('deleted_at')->count(),
+            'refuse' => Perte::where('status', 'Refusé')->whereNull('deleted_at')->count(),
+            // Add total quantity for validated pertes
+            'quantite_validee' => Perte::where('status', 'Validé')->whereNull('deleted_at')->sum('quantite'),
+        ];
+        
         return response()->json([
             'ventes' => $ventesStatus,
-            'achats' => $achatsStatus
+            'achats' => $achatsStatus,
+            'pertes' => $pertesStatus,
         ]);
     }
 }

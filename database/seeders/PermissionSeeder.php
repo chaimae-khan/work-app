@@ -98,10 +98,16 @@ class PermissionSeeder extends Seeder
             'retour-modifier',
             'retour-supprimer',
             'Inventaire',
+
             'Voir-Consommation',
             'Voir-Consommation-Complète',
             'Voir-Rapport-Mensuel-Consommation',
             'Voir-Stock-Demandeur',
+            'Pertes-ajouter',
+            'Pertes-modifier',
+            'Pertes-supprimer',
+            'Pertes-valider',
+            'Pertes-voir', 
             
          ];
  

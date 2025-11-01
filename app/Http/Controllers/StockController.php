@@ -57,6 +57,7 @@ class StockController extends Controller
             
             // Apply class filter if provided
             if ($request->filled('filter_class')) {
+
                 $dataStock->where('c.classe', $request->filter_class);
             }
 
@@ -493,7 +494,7 @@ class StockController extends Controller
     /**
      * Get categories by class for filter
      */
-// In ProductController.php
+
 public function getCategoriesByClass(Request $request)
 {
     try {
@@ -562,4 +563,193 @@ public function getCategoriesByClass(Request $request)
             ], 500);
         }
     }
+    /**
+ * Display products that are expiring soon (within 7 days) or already expired
+ */
+public function expiringProducts(Request $request)
+{
+    if ($request->ajax()) {
+        $dataExpiring = DB::table('products as p')
+                    ->leftJoin('categories as c', 'p.id_categorie', '=', 'c.id')
+                    ->leftJoin('sub_categories as sc', 'p.id_subcategorie', '=', 'sc.id')
+                    ->leftJoin('stock as s', 'p.id', '=', 's.id_product')
+                    ->leftJoin('unite as u', 'p.id_unite', '=', 'u.id')
+                    ->whereNull('p.deleted_at')
+                    ->whereNotNull('p.date_expiration')
+                    ->where('p.date_expiration', '<=', DB::raw('DATE_ADD(CURDATE(), INTERVAL 7 DAY)'))
+                    ->select(
+                        'p.id',
+                        'p.code_article',
+                        'p.name',
+                        'u.name as unite_name',
+                        'c.name as categorie',
+                        'sc.name as famille',
+                        'p.emplacement',
+                        's.quantite',
+                        'p.date_expiration',
+                        'p.photo',
+                        'p.created_at',
+                        DB::raw('DATEDIFF(p.date_expiration, CURDATE()) as days_until_expiry')
+                    );
+        
+        // Apply class filter if provided
+        if ($request->filled('filter_class')) {
+            $dataExpiring->where('c.classe', $request->filter_class);
+        }
+
+        // Apply category filter if provided
+        if ($request->filled('filter_categorie')) {
+            $dataExpiring->where('p.id_categorie', $request->filter_categorie);
+        }
+
+        // Apply subcategory filter if provided
+        if ($request->filled('filter_subcategorie')) {
+            $dataExpiring->where('p.id_subcategorie', $request->filter_subcategorie);
+        }
+
+        // Apply designation (name) filter if provided
+        if ($request->filled('filter_designation')) {
+            $dataExpiring->where('p.name', 'LIKE', '%' . $request->filter_designation . '%');
+        }
+        
+        $dataExpiring->orderBy('p.date_expiration', 'asc');
+
+        return DataTables::of($dataExpiring)
+            ->addIndexColumn()
+            ->addColumn('expiry_status', function ($row) {
+                if ($row->days_until_expiry < 0) {
+                    return '<span class="badge bg-dark">Expiré</span>';
+                } elseif ($row->days_until_expiry == 0) {
+                    return '<span class="badge bg-danger">Expire aujourd\'hui</span>';
+                } elseif ($row->days_until_expiry <= 3) {
+                    return '<span class="badge bg-danger">Expire dans ' . $row->days_until_expiry . ' jour(s)</span>';
+                } else {
+                    return '<span class="badge bg-warning">Expire dans ' . $row->days_until_expiry . ' jour(s)</span>';
+                }
+            })
+            ->addColumn('photo_display', function ($row) {
+                if ($row->photo) {
+                    return '<img src="' . asset('storage/' . $row->photo) . '" alt="Photo" style="width: 50px; height: 50px; object-fit: cover;" class="rounded">';
+                }
+                return '<span class="text-muted">Pas d\'image</span>';
+            })
+            ->editColumn('date_expiration', function ($row) {
+                return $row->date_expiration ? \Carbon\Carbon::parse($row->date_expiration)->format('d/m/Y') : '';
+            })
+            ->editColumn('created_at', function ($row) {
+                return $row->created_at ? \Carbon\Carbon::parse($row->created_at)->format('d/m/Y H:i') : '';
+            })
+            ->rawColumns(['expiry_status', 'photo_display'])
+            ->make(true);
+    }
+    
+    // Get distinct classes for filter dropdown
+    $class = DB::table('categories')
+                ->whereNotNull('classe')
+                ->where('classe', '!=', '')
+                ->distinct()
+                ->pluck('classe')
+                ->map(function($classe) {
+                    return (object)['classe' => $classe];
+                });
+    
+    return view('stock.expiring', compact('class'));
+}
+
+/**
+ * Display products with low stock (at or below threshold)
+ */
+public function lowStockProducts(Request $request)
+{
+    if ($request->ajax()) {
+        $dataLowStock = DB::table('stock as s')
+                    ->join('products as p', 'p.id', 's.id_product')
+                    ->leftJoin('categories as c', 'p.id_categorie', '=', 'c.id')
+                    ->leftJoin('sub_categories as sc', 'p.id_subcategorie', '=', 'sc.id')
+                    ->leftJoin('unite as u', 'p.id_unite', '=', 'u.id')
+                    ->leftJoin('tvas as t', 'p.id_tva', '=', 't.id')
+                    ->whereNull('s.deleted_at')
+                    ->whereNull('p.deleted_at')
+                    ->whereRaw('s.quantite <= p.seuil')
+                    ->select(
+                        's.id',
+                        'p.code_article',
+                        'p.name',
+                        'u.name as unite_name',
+                        'c.name as categorie',
+                        'sc.name as famille',
+                        'p.emplacement',
+                        's.quantite',
+                        'p.price_achat',
+                        't.value as tva_value',
+                        'p.seuil',
+                        'p.photo',
+                        'p.created_at',
+                        DB::raw('(p.seuil - s.quantite) as deficit')
+                    );
+        
+        // Apply class filter if provided
+        if ($request->filled('filter_class')) {
+            $dataLowStock->where('c.classe', $request->filter_class);
+        }
+
+        // Apply category filter if provided
+        if ($request->filled('filter_categorie')) {
+            $dataLowStock->where('p.id_categorie', $request->filter_categorie);
+        }
+
+        // Apply subcategory filter if provided
+        if ($request->filled('filter_subcategorie')) {
+            $dataLowStock->where('p.id_subcategorie', $request->filter_subcategorie);
+        }
+
+        // Apply designation (name) filter if provided
+        if ($request->filled('filter_designation')) {
+            $dataLowStock->where('p.name', 'LIKE', '%' . $request->filter_designation . '%');
+        }
+        
+        $dataLowStock->orderBy('deficit', 'desc');
+
+        return DataTables::of($dataLowStock)
+            ->addIndexColumn()
+            ->addColumn('stock_status', function ($row) {
+                if ($row->quantite == 0) {
+                    return '<span class="badge bg-dark">Stock Épuisé</span>';
+                } elseif ($row->quantite < $row->seuil) {
+                    return '<span class="badge bg-danger">Stock Critique</span>';
+                } else {
+                    return '<span class="badge bg-warning">Au Seuil</span>';
+                }
+            })
+            ->addColumn('photo_display', function ($row) {
+                if ($row->photo) {
+                    return '<img src="' . asset('storage/' . $row->photo) . '" alt="Photo" style="width: 50px; height: 50px; object-fit: cover;" class="rounded">';
+                }
+                return '<span class="text-muted">Pas d\'image</span>';
+            })
+            ->editColumn('price_achat', function ($row) {
+                return $row->price_achat ? number_format($row->price_achat, 2) . ' DH' : '0.00 DH';
+            })
+            ->editColumn('tva_value', function ($row) {
+                return $row->tva_value ? number_format($row->tva_value, 2) . '%' : '0.00%';
+            })
+            ->editColumn('created_at', function ($row) {
+                return $row->created_at ? \Carbon\Carbon::parse($row->created_at)->format('d/m/Y H:i') : '';
+            })
+            ->rawColumns(['stock_status', 'photo_display'])
+            ->make(true);
+    }
+    
+    // Get distinct classes for filter dropdown
+    $class = DB::table('categories')
+                ->whereNotNull('classe')
+                ->where('classe', '!=', '')
+                ->distinct()
+                ->pluck('classe')
+                ->map(function($classe) {
+                    return (object)['classe' => $classe];
+                });
+    
+    return view('stock.low_stock', compact('class'));
+}
 }

@@ -6,30 +6,29 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
+    public function up()
     {
         Schema::create('pertes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_category')->nullable()->constrained('categories')->onDelete('cascade');
-            $table->foreignId('id_sub_categories')->nullable()->constrained('sub_categories')->onDelete('cascade');
-            $table->string('class')->nullable();
-            $table->foreignId('id_product')->nullable()->constrained('products')->onDelete('cascade');
-            $table->foreignId('id_unite')->nullable()->constrained('unite')->onDelete('cascade');
-            $table->string('nature')->nullable();
-            $table->integer('qte')->nullable();
-            $table->string('date')->nullable();
-            $table->string('cause')->nullable();
+            $table->foreignId('id_product')->constrained('products')->onDelete('cascade');
+            $table->foreignId('id_category')->constrained('categories')->onDelete('cascade');
+            $table->foreignId('id_subcategorie')->constrained('sub_categories')->onDelete('cascade');
+            $table->foreignId('id_unite')->constrained('unite')->onDelete('cascade');
+            $table->string('classe');
+            $table->string('designation'); // Product name at time of loss
+            $table->decimal('quantite', 10, 2);
+            $table->string('nature'); // Nature of loss
+            $table->date('date_perte'); // Date of loss
+            $table->text('cause'); // Cause/reason for loss
+            $table->enum('status', ['En attente', 'Validé', 'Refusé'])->default('En attente');
+            $table->text('refusal_reason')->nullable();
+            $table->foreignId('id_user')->constrained('users')->onDelete('cascade'); // User who declared the loss
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('pertes');
     }

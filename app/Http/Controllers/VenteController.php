@@ -696,6 +696,8 @@ private function getStatusHistory($venteId)
             'total'     => $SumVente
         ]);
     }
+
+
 public function ShowBonVente($id)
 {
     if (!auth()->user()->can('Commande')) {
@@ -781,7 +783,24 @@ public function ShowBonVente($id)
     }
 
     // Get status change history from audit logs
-    $statusHistory = $this->getStatusHistory($id); 
+    $statusHistory = $this->getStatusHistory($id);
+    
+    // ✅ ADD CREATION STATUS TO THE BEGINNING OF THE HISTORY
+    // Get the creator user information
+    $creatorUser = DB::table('users')
+        ->where('id', $bonVente->id_user)
+        ->select(DB::raw("CONCAT(prenom, ' ', nom) as name"))
+        ->first();
+    
+    // Create the creation record
+    $creationRecord = (object)[
+        'status' => 'Création',
+        'date' => $bonVente->created_at,
+        'user_name' => $creatorUser ? $creatorUser->name : 'Système'
+    ];
+    
+    // Prepend creation record to the status history collection
+    $statusHistory = collect([$creationRecord])->merge($statusHistory);
 
     return view('vente.list', compact('bonVente', 'Formateur', 'Data_Vente', 'transferDetails', 'returnDetails', 'statusHistory'));
 }

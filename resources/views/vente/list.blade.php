@@ -49,54 +49,59 @@
                     </div>
                 </div>
             </div>
-            <!-- Status History Section - ADD THIS AFTER THE "Information Demandeur" SECTION -->
-            @if(isset($statusHistory) && count($statusHistory) > 0)
-            <div class="card card-body">
-                <h5 class="card-title border p-2 bg-light rounded-2">
-                    <i class="mdi mdi-history"></i> Historique des changements de statut
-                </h5>
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped">
-                        <thead class="table-light">
-                            <tr>
-                                <th width="30%">Statut</th>
-                                <th width="40%">Date de changement</th>
-                                <th width="30%">Modifié par</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($statusHistory as $change)
-                            <tr>
-                                <td>
-                                    @if ($change->status == 'Création')
-                                        <span class="badge bg-info">{{$change->status}}</span>
-                                    @elseif ($change->status == 'Validation')
-                                        <span class="badge bg-success">Réception</span>
-                                    @elseif ($change->status == 'Refus')
-                                        <span class="badge bg-danger">{{$change->status}}</span>
-                                    @elseif ($change->status == 'Livraison')
-                                        <span class="badge bg-primary">{{$change->status}}</span>
-                                    @elseif ($change->status == 'Réception')
-                                        <span class="badge bg-warning">Validation</span>
-                                    @else
-                                        <span class="badge bg-secondary">{{$change->status}}</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <i class="mdi mdi-calendar-clock"></i>
-                                    {{ \Carbon\Carbon::parse($change->date)->format('d/m/Y H:i:s') }}
-                                </td>
-                                <td>
-                                    <i class="mdi mdi-account"></i>
-                                    {{ $change->user_name }}
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            @endif
+         
+
+<!-- Status History Section -->
+@if(isset($statusHistory) && count($statusHistory) > 0)
+<div class="card card-body">
+    <h5 class="card-title border p-2 bg-light rounded-2">
+        <i class="mdi mdi-history"></i> Historique des changements de statut
+    </h5>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th width="30%">Statut</th>
+                    <th width="40%">Date de changement</th>
+                    <th width="30%">Modifié par</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($statusHistory as $change)
+                <tr>
+                    <td>
+                        @if ($change->status == 'Création')
+                            <span class="badge bg-info">{{$change->status}}</span>
+                        @elseif ($change->status == 'Validation')
+                            <span class="badge bg-success">Réception</span>
+                        @elseif ($change->status == 'Refus')
+                            <span class="badge bg-danger">{{$change->status}}</span>
+                        @elseif ($change->status == 'Livraison')
+                            <span class="badge bg-primary">{{$change->status}}</span>
+                        @elseif ($change->status == 'Réception')
+                            <span class="badge bg-warning">Validation</span>
+                        @elseif ($change->status == 'Visé')
+                            <span class="badge bg-secondary">{{$change->status}}</span>
+                        @else
+                            <span class="badge bg-secondary">{{$change->status}}</span>
+                        @endif
+                    </td>
+                    <td>
+                        <i class="mdi mdi-calendar-clock"></i>
+                        {{ \Carbon\Carbon::parse($change->date)->format('d/m/Y H:i:s') }}
+                    </td>
+                    <td>
+                        <i class="mdi mdi-account"></i>
+                        {{ $change->user_name }}
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+         
         
             <div class="card card-body">
                 <h5 class="card-title border p-2 bg-light rounded-2">Fiche détail Commande</h5>

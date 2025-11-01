@@ -43,7 +43,7 @@
                             </div>
                                                     
                             <div class="table-responsive">
-                                <!-- Filter Section -->
+<!-- Filter Section -->
 <div class="row mb-3">
     <div class="col-md-3">
         <label for="filter_class" class="form-label">Classe</label>

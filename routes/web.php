@@ -292,7 +292,18 @@ Route::get('router/{id}', [RouterStockController::class, 'show'])->name('router.
 Route::get('router/edit/{id}', [RouterStockController::class, 'edit'])->name('router.edit');
 Route::post('router/update-status', [RouterStockController::class, 'update'])->name('router.update');
 Route::post('router/change-status', [RouterStockController::class, 'ChangeStatusRouter'])->name('router.change-status');
-//pert
+
 Route::get('/pertes', [PerteController::class, 'index'])->name('pertes.index');
-Route::post('addPerte',[PerteController::class,'store']);
+Route::post('/addPerte', [PerteController::class, 'store'])->name('pertes.store');
+Route::get('/getProductsBySubcategory/{id}', [PerteController::class, 'getProductsBySubcategory'])->name('pertes.getProductsBySubcategory');
+Route::get('/viewPerte/{id}', [PerteController::class, 'edit'])->name('pertes.view');
+Route::post('/changeStatusPerte', [PerteController::class, 'changeStatus'])->name('pertes.changeStatus');
+Route::post('/deletePerte', [PerteController::class, 'destroy'])->name('pertes.delete');
+
+//stock list 
+Route::get('stock/expiring', [StockController::class, 'expiringProducts'])->name('stock.expiring');
+Route::get('stock/low-stock', [StockController::class, 'lowStockProducts'])->name('stock.lowstock');
+Route::get('stock/expiring-count', [StockController::class, 'getExpiringCount'])->name('stock.expiringcount');
+Route::get('/pertes/{id}', [PerteController::class, 'show'])->name('pertes.show');
 });
+
