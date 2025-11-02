@@ -506,20 +506,34 @@ private function getFilteredConsumptionData(Carbon $date, string $typeOperation,
                 }
 
                 // Update the menu attributes if they exist from the vente
-                if ($consumption->vente) {
-                    if ($consumption->vente->entree && !$groupedData[$menuType]['entree']) {
-                        $groupedData[$menuType]['entree'] = $consumption->vente->entree;
-                    }
-                    if ($consumption->vente->plat_principal && !$groupedData[$menuType]['plat_principal']) {
-                        $groupedData[$menuType]['plat_principal'] = $consumption->vente->plat_principal;
-                    }
-                    if ($consumption->vente->accompagnement && !$groupedData[$menuType]['accompagnement']) {
-                        $groupedData[$menuType]['accompagnement'] = $consumption->vente->accompagnement;
-                    }
-                    if ($consumption->vente->dessert && !$groupedData[$menuType]['dessert']) {
-                        $groupedData[$menuType]['dessert'] = $consumption->vente->dessert;
-                    }
-                }
+               // Update the menu attributes if they exist from the vente
+if ($consumption->vente) {
+    // ✅ CONVERT ENTREE IDs TO NAMES
+    if ($consumption->vente->entree && !$groupedData[$menuType]['entree']) {
+        $entreeIds = explode(',', $consumption->vente->entree);
+        $entreeNames = DB::table('plats')->whereIn('id', $entreeIds)->pluck('name')->toArray();
+        $groupedData[$menuType]['entree'] = implode(', ', $entreeNames);
+    }
+    
+    // ✅ CONVERT PLAT_PRINCIPAL IDs TO NAMES
+    if ($consumption->vente->plat_principal && !$groupedData[$menuType]['plat_principal']) {
+        $platIds = explode(',', $consumption->vente->plat_principal);
+        $platNames = DB::table('plats')->whereIn('id', $platIds)->pluck('name')->toArray();
+        $groupedData[$menuType]['plat_principal'] = implode(', ', $platNames);
+    }
+    
+    // ✅ ACCOMPAGNEMENT - already stored as text (not IDs)
+    if ($consumption->vente->accompagnement && !$groupedData[$menuType]['accompagnement']) {
+        $groupedData[$menuType]['accompagnement'] = $consumption->vente->accompagnement;
+    }
+    
+    // ✅ CONVERT DESSERT IDs TO NAMES
+    if ($consumption->vente->dessert && !$groupedData[$menuType]['dessert']) {
+        $dessertIds = explode(',', $consumption->vente->dessert);
+        $dessertNames = DB::table('plats')->whereIn('id', $dessertIds)->pluck('name')->toArray();
+        $groupedData[$menuType]['dessert'] = implode(', ', $dessertNames);
+    }
+}
 
                 $groupedData[$menuType]['eleves'] += $consumption->eleves;
                 $groupedData[$menuType]['personnel'] += $consumption->personnel;

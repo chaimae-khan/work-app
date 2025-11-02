@@ -258,25 +258,25 @@
                                             </th>
                                         </tr>
                                         
-                                        <!-- Menu Composition Section -->
-                                        @if($bonVente->entree || $bonVente->plat_principal || $bonVente->accompagnement || $bonVente->dessert)
+                                        <!-- Menu Composition Section - CORRECTED VERSION -->
+                                        @if($bonVente->entree_names || $bonVente->plat_principal_names || $bonVente->accompagnement || $bonVente->dessert_names)
                                         <tr>
                                             <th colspan="2" class="text-center bg-info-subtle">
                                                 <i class="mdi mdi-silverware-fork-knife"></i> Composition du Menu
                                             </th>
                                         </tr>
                                         
-                                        @if($bonVente->entree)
+                                        @if($bonVente->entree_names)
                                         <tr>
                                             <th><i class="mdi mdi-food-fork-drink"></i> Entrée</th>
-                                            <th class="text-end">{{$bonVente->entree}}</th>
+                                            <th class="text-end">{{$bonVente->entree_names}}</th>
                                         </tr>
                                         @endif
                                         
-                                        @if($bonVente->plat_principal)
+                                        @if($bonVente->plat_principal_names)
                                         <tr>
                                             <th><i class="mdi mdi-food"></i> Plat Principal</th>
-                                            <th class="text-end">{{$bonVente->plat_principal}}</th>
+                                            <th class="text-end">{{$bonVente->plat_principal_names}}</th>
                                         </tr>
                                         @endif
                                         
@@ -287,10 +287,10 @@
                                         </tr>
                                         @endif
                                         
-                                        @if($bonVente->dessert)
+                                        @if($bonVente->dessert_names)
                                         <tr>
                                             <th><i class="mdi mdi-cupcake"></i> Dessert</th>
-                                            <th class="text-end">{{$bonVente->dessert}}</th>
+                                            <th class="text-end">{{$bonVente->dessert_names}}</th>
                                         </tr>
                                         @endif
                                         @endif

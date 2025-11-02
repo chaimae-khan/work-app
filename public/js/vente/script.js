@@ -814,7 +814,7 @@ $('#BtnSaveVente').on('click', function(e) {
         
         /* requestData.entree = entree && entree.trim() !== '' ? entree : null; */
         requestData.entree = (Array.isArray(entree) ? entree.join(',') : entree)?.trim() || null;
-        requestData.platPrincipal = (Array.isArray(platPrincipal) ? platPrincipal.join(',') : platPrincipal)?.trim() || null;
+        requestData.plat_principal = (Array.isArray(platPrincipal) ? platPrincipal.join(',') : platPrincipal)?.trim() || null;
         requestData.accompagnement = (Array.isArray(accompagnement) ? accompagnement.join(',') : accompagnement)?.trim() || null;
         requestData.dessert = (Array.isArray(dessert) ? dessert.join(',') : dessert)?.trim() || null;
 

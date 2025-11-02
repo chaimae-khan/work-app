@@ -742,22 +742,46 @@ public function ShowBonVente($id)
     $decoded = $hashids->decode($id);
 
     if (empty($decoded)) {
-        abort(404); // Handle invalid hash
+        abort(404);
     }
 
-    $id = $decoded[0]; // Extract the original ID
+    $id = $decoded[0];
 
-    // Now, use $id to retrieve the BonVente
+    // Retrieve the BonVente
     $bonVente = Vente::findOrFail($id);
     
-    // Fetch formateur with all fields including fonction
+    // ✅ CONVERT PLAT IDs TO NAMES
+    if ($bonVente->entree) {
+        $entreeIds = explode(',', $bonVente->entree);
+        $entreeNames = DB::table('plats')->whereIn('id', $entreeIds)->pluck('name')->toArray();
+        $bonVente->entree_names = implode(', ', $entreeNames);
+    } else {
+        $bonVente->entree_names = null;
+    }
+    
+    if ($bonVente->plat_principal) {
+        $platIds = explode(',', $bonVente->plat_principal);
+        $platNames = DB::table('plats')->whereIn('id', $platIds)->pluck('name')->toArray();
+        $bonVente->plat_principal_names = implode(', ', $platNames);
+    } else {
+        $bonVente->plat_principal_names = null;
+    }
+    
+    if ($bonVente->dessert) {
+        $dessertIds = explode(',', $bonVente->dessert);
+        $dessertNames = DB::table('plats')->whereIn('id', $dessertIds)->pluck('name')->toArray();
+        $bonVente->dessert_names = implode(', ', $dessertNames);
+    } else {
+        $bonVente->dessert_names = null;
+    }
+    
+    // Rest of the existing code...
     $Formateur = DB::table('users as f')
         ->join('ventes as v', 'v.id_formateur', '=', 'f.id')
         ->select('f.*')
         ->where('v.id', $id)
         ->first();
         
-    // Modified query to include product price and other details
     $Data_Vente = DB::table('ventes as v')
         ->join('ligne_vente as l', 'v.id', '=', 'l.idvente')
         ->join('products as p', 'l.idproduit', '=', 'p.id')
@@ -772,7 +796,6 @@ public function ShowBonVente($id)
         ->where('v.id', $id)
         ->get();
     
-    // Get transfer details for each product in this order (where from is not null)
     $transferDetails = [];
     foreach ($Data_Vente as $item) {
         $transfers = DB::table('line_transfer as lt')
@@ -780,8 +803,8 @@ public function ShowBonVente($id)
             ->join('users as u', 'st.to', '=', 'u.id')
             ->where('lt.idcommande', $id)
             ->where('lt.id_product', $item->idproduit)
-            ->where('st.status', 'Validation') // Only count validated transfers
-            ->whereNotNull('st.from') // Only get records where from is not null (true transfers)
+            ->where('st.status', 'Validation')
+            ->whereNotNull('st.from')
             ->select(
                 DB::raw("CONCAT(u.prenom, ' ', u.nom) as recipient_name"),
                 'lt.quantite',
@@ -794,7 +817,6 @@ public function ShowBonVente($id)
         }
     }
     
-    // Get return details for each product in this order (where from is null)
     $returnDetails = [];
     foreach ($Data_Vente as $item) {
         $returns = DB::table('line_transfer as lt')
@@ -802,8 +824,8 @@ public function ShowBonVente($id)
             ->join('users as u', 'st.to', '=', 'u.id')
             ->where('lt.idcommande', $id)
             ->where('lt.id_product', $item->idproduit)
-            ->where('st.status', 'Validation') // Only count validated returns
-            ->whereNull('st.from') // Only get records where from is null (returns)
+            ->where('st.status', 'Validation')
+            ->whereNull('st.from')
             ->select(
                 DB::raw("CONCAT(u.prenom, ' ', u.nom) as recipient_name"),
                 'lt.quantite',
@@ -816,118 +838,132 @@ public function ShowBonVente($id)
         }
     }
 
-    // Get status change history from audit logs
     $statusHistory = $this->getStatusHistory($id);
     
-    // ✅ ADD CREATION STATUS TO THE BEGINNING OF THE HISTORY
-    // Get the creator user information
     $creatorUser = DB::table('users')
         ->where('id', $bonVente->id_user)
         ->select(DB::raw("CONCAT(prenom, ' ', nom) as name"))
         ->first();
     
-    // Create the creation record
     $creationRecord = (object)[
         'status' => 'Création',
         'date' => $bonVente->created_at,
         'user_name' => $creatorUser ? $creatorUser->name : 'Système'
     ];
     
-    // Prepend creation record to the status history collection
     $statusHistory = collect([$creationRecord])->merge($statusHistory);
 
     return view('vente.list', compact('bonVente', 'Formateur', 'Data_Vente', 'transferDetails', 'returnDetails', 'statusHistory'));
 }
 
     public function FactureVente($id)
-    {
-        if (!auth()->user()->can('Commande')) {
-            abort(403, 'Vous n\'avez pas la permission de voir cette facture');
-        }
-        
-        $hashids = new Hashids();
-        $decoded = $hashids->decode($id);
-    
-        if (empty($decoded)) {
-            abort(404); // Handle invalid hash
-        }
-    
-        $id = $decoded[0]; // Extract the original ID
-        
-        // Get the main vente data (bonVente in ShowBonVente)
-        $bonVente = Vente::findOrFail($id);
-        
-        // Get the Formateur object with all fields including fonction
-        $Formateur = DB::table('users as f')
-            ->join('ventes as v', 'v.id_formateur', '=', 'f.id')
-            ->select('f.*')
-            ->where('v.id', $id)
-            ->first();
-
-     $getHistorique_sig = DB::table('hostorique_sig as h')
-    ->join('ventes as v','v.id','h.idvente')
-    ->join('users as u','u.id','h.iduser')
-    ->where('h.idvente',$id)
-    ->select(DB::raw('concat(u.nom," ",u.prenom) as name'), 'h.created_at', 'h.status', 'h.signature')
-    ->get()
-    ->map(function($item) {
-        if (!empty($item->signature) && file_exists(public_path($item->signature))) {
-            $item->signature = base64_encode(file_get_contents(public_path($item->signature)));
-        }
-        return $item;
-    });
-
-// Separate signatures by status
-$creation = $getHistorique_sig->firstWhere('status', 'Création');
-$validation = $getHistorique_sig->firstWhere('status', 'Validation');
-$livraison = $getHistorique_sig->firstWhere('status', 'Livraison');
-$reception = $getHistorique_sig->firstWhere('status', 'Réception');
-        //  dd($getHistorique_sig);
-        
-        // Get all items in the vente with product prices
-        $Data_Vente = DB::table('ventes as v')
-            ->join('ligne_vente as l', 'v.id', '=', 'l.idvente')
-            ->join('products as p', 'l.idproduit', '=', 'p.id')
-            ->select(
-                'p.price_achat', 
-                'l.qte', 
-                DB::raw('p.price_achat * l.qte as total'), 
-                'p.name', 
-                'v.created_at', 
-                'v.type_menu', 
-                'v.type_commande'
-            )
-            ->where('v.id', $id)
-            ->get();
-    
-        $imagePath = public_path('images/logo_top.png');
-        $imageData = base64_encode(file_get_contents($imagePath));
-        $logo_bottom = public_path('images/logo_bottom.png');
-        $imageData_bottom = base64_encode(file_get_contents($logo_bottom));
-        
-        // Create the view with compact to exactly match ShowBonVente
-        $html = view('vente.facture', compact(
-            'bonVente', 
-            'Formateur', 
-            'Data_Vente',
-            'imageData',
-            'imageData_bottom',
-            'getHistorique_sig'
-        ))->render();
-    
-        // Load HTML to PDF
-        $pdf = Pdf::loadHTML($html)->output();
-    
-        // Set response headers
-        $headers = [
-            "Content-type" => "application/pdf",
-        ];
-        return response()->streamDownload(
-            fn() => print($pdf),
-            "BonDeCommande.pdf",
-            $headers
-        );
+{
+    if (!auth()->user()->can('Commande')) {
+        abort(403, 'Vous n\'avez pas la permission de voir cette facture');
     }
+    
+    $hashids = new Hashids();
+    $decoded = $hashids->decode($id);
+
+    if (empty($decoded)) {
+        abort(404);
+    }
+
+    $id = $decoded[0];
+    
+    $bonVente = Vente::findOrFail($id);
+    
+    // ✅ CONVERT PLAT IDs TO NAMES (same as ShowBonVente)
+    if ($bonVente->entree) {
+        $entreeIds = explode(',', $bonVente->entree);
+        $entreeNames = DB::table('plats')->whereIn('id', $entreeIds)->pluck('name')->toArray();
+        $bonVente->entree_names = implode(', ', $entreeNames);
+    } else {
+        $bonVente->entree_names = null;
+    }
+    
+    if ($bonVente->plat_principal) {
+        $platIds = explode(',', $bonVente->plat_principal);
+        $platNames = DB::table('plats')->whereIn('id', $platIds)->pluck('name')->toArray();
+        $bonVente->plat_principal_names = implode(', ', $platNames);
+    } else {
+        $bonVente->plat_principal_names = null;
+    }
+    
+    if ($bonVente->dessert) {
+        $dessertIds = explode(',', $bonVente->dessert);
+        $dessertNames = DB::table('plats')->whereIn('id', $dessertIds)->pluck('name')->toArray();
+        $bonVente->dessert_names = implode(', ', $dessertNames);
+    } else {
+        $bonVente->dessert_names = null;
+    }
+    
+    // Rest of existing code...
+    $Formateur = DB::table('users as f')
+        ->join('ventes as v', 'v.id_formateur', '=', 'f.id')
+        ->select('f.*')
+        ->where('v.id', $id)
+        ->first();
+
+    $getHistorique_sig = DB::table('hostorique_sig as h')
+        ->join('ventes as v','v.id','h.idvente')
+        ->join('users as u','u.id','h.iduser')
+        ->where('h.idvente',$id)
+        ->select(DB::raw('concat(u.nom," ",u.prenom) as name'), 'h.created_at', 'h.status', 'h.signature')
+        ->get()
+        ->map(function($item) {
+            if (!empty($item->signature) && file_exists(public_path($item->signature))) {
+                $item->signature = base64_encode(file_get_contents(public_path($item->signature)));
+            }
+            return $item;
+        });
+
+    $creation = $getHistorique_sig->firstWhere('status', 'Création');
+    $validation = $getHistorique_sig->firstWhere('status', 'Validation');
+    $livraison = $getHistorique_sig->firstWhere('status', 'Livraison');
+    $reception = $getHistorique_sig->firstWhere('status', 'Réception');
+    
+    $Data_Vente = DB::table('ventes as v')
+        ->join('ligne_vente as l', 'v.id', '=', 'l.idvente')
+        ->join('products as p', 'l.idproduit', '=', 'p.id')
+        ->select(
+            'p.price_achat', 
+            'l.qte', 
+            DB::raw('p.price_achat * l.qte as total'), 
+            'p.name', 
+            'v.created_at', 
+            'v.type_menu', 
+            'v.type_commande'
+        )
+        ->where('v.id', $id)
+        ->get();
+
+    $imagePath = public_path('images/logo_top.png');
+    $imageData = base64_encode(file_get_contents($imagePath));
+    $logo_bottom = public_path('images/logo_bottom.png');
+    $imageData_bottom = base64_encode(file_get_contents($logo_bottom));
+    
+    $html = view('vente.facture', compact(
+        'bonVente', 
+        'Formateur', 
+        'Data_Vente',
+        'imageData',
+        'imageData_bottom',
+        'getHistorique_sig'
+    ))->render();
+
+    $pdf = Pdf::loadHTML($html)->output();
+
+    $headers = [
+        "Content-type" => "application/pdf",
+    ];
+    return response()->streamDownload(
+        fn() => print($pdf),
+        "BonDeCommande.pdf",
+        $headers
+    );
+}
+
 
     public function edit(Request $request, $id)
     {
