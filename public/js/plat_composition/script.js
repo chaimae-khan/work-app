@@ -44,6 +44,41 @@ $(document).ready(function () {
         toggleQuantityFieldsAndMenu();
     });
 
+    $('#filter_subcategorie').on('change', function() {
+        var subcategoryId = $(this).val();
+        var categoryId = $('#filter_categorie').val();
+        let name_product = $('.input_products').val().trim();
+        
+        if (subcategoryId) {
+            // Visual feedback
+            $('.input_products').prop('disabled', true);
+            
+            
+            $.get(getProduct, { 
+                product: name_product,
+                filter_subcategorie: subcategoryId,
+                category: categoryId 
+            }, function(response) {
+                if (response.status === 200) {
+                    $('.input_products').prop('disabled', false);
+                   
+                    initializeTableProduct('.TableProductPlat', response.data);
+                } else {
+                    $('.input_products').prop('disabled', false);
+                    
+                    new AWN().info("Aucun produit trouvé.", {durations: {info: 5000}});
+                }
+            }).fail(function(xhr, status, error) {
+                $('.input_products').prop('disabled', false);
+                
+                console.error("Error loading products:", error);
+                new AWN().alert("Erreur lors du chargement des produits", {
+                    durations: { alert: 5000 }
+                });
+            });
+        }
+    });
+
 
     $('#filter_categorie').on('change', function() {
         var categoryId = $(this).val();
@@ -511,7 +546,7 @@ $(document).ready(function () {
 function sendAjaxRequest(name_product, category, filter_subcategorie, type_commande) {
     // Visual feedback
     $('.input_products').prop('disabled', true);
-    $('.TableProductPlat_wrapper').addClass('opacity-50');
+    
 
     $.ajax({
         type: "GET",

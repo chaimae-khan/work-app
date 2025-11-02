@@ -187,6 +187,7 @@ class AchatController extends Controller
                 ->join('stock as s', 'p.id', '=', 's.id_product')
                 ->join('locals as l', 'p.id_local', '=', 'l.id')
                 ->join('categories as c', 'c.id', '=', 'p.id_categorie')
+                ->join('unite as u', 'u.id', '=', 'p.id_unite')
                 ->whereNull('p.deleted_at')
                 ->select(
                     'p.name',
@@ -195,7 +196,9 @@ class AchatController extends Controller
                     'p.price_achat',
                     'l.name as name_local',
                     'p.id',
-                    'p.price_vente'
+                    'p.price_vente',
+                    'u.name as unite_name',
+                    'u.id as id_unite'
                 );
 
             $Data_Product->when($name_product, function ($q, $name_product) {

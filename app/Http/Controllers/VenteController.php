@@ -23,6 +23,9 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Stock;
 use App\Notifications\SystemNotification;
 use App\Models\Historique_Sig;
+
+use function PHPUnit\Framework\isNull;
+
 class VenteController extends Controller
 {
     protected $inventoryService;
@@ -129,6 +132,9 @@ class VenteController extends Controller
     $unites = Unite::all();
     $class = DB::select("select distinct(classe) as classe from categories");
 
+
+    $Plat_Entre = DB::select("select * from plats where type='Entrée'");
+
     return view('vente.index')
         ->with('formateurs', $formateurs)
         ->with('categories', $categories)
@@ -137,6 +143,7 @@ class VenteController extends Controller
         ->with('rayons', $rayons)
         ->with('tvas', $tvas)
         ->with('unites', $unites)
+        ->with('Plat_Entre', $Plat_Entre)
         ->with('class',$class); 
         
 }
@@ -279,6 +286,8 @@ class VenteController extends Controller
 
  public function GetTmpVenteByFormateur(Request $request)
 {
+   
+   
     $Data = DB::table('temp_vente as t')
         ->join('users as f', 't.id_formateur', '=', 'f.id')
         ->join('products as p', 't.idproduit', '=', 'p.id')
@@ -288,7 +297,9 @@ class VenteController extends Controller
     
     return DataTables::of($Data)
             ->addIndexColumn()
-            ->addColumn('action', function ($row) {
+           ->addColumn('action', function ($row) use ($request) {
+               
+                
                 $btn = '';
 
                 // REMOVED: Permission checks - always show edit and delete buttons
@@ -1694,6 +1705,61 @@ public function getcategorybytypemenu(Request $request)
         'data'    => $data,
     ]);
 }
+
+
+   public function sendPlatToTmpVente(Request $request)
+    {
+        $idsPlat = $request->idplat;
+            
+        if($request->idremove == null)
+        {
+            
+            $content = [];
+
+            
+
+            $lignePlats = DB::table('ligne_plat as l')
+                ->join('products as p', 'p.id', '=', 'l.idproduit')
+                ->select(
+                    'l.qte',
+                    'l.idproduit',
+                    DB::raw(Auth::id() . ' as id_user'),
+                    DB::raw(Auth::id() . ' as id_formateur',
+                ),'l.id'
+                )
+                ->where('id_plat', $idsPlat)
+                ->get(); // get() returns all rows
+
+            if($lignePlats->count() > 0) {
+                // merge all rows into $content
+                $content = array_merge($content, $lignePlats->toArray());
+            }
+        
+            foreach($content as $item)
+            {
+                $TempVente = TempVente::create([
+                    'id_user'          => $item->id_user,
+                    'idproduit'        => $item->idproduit,
+                    'id_client'        => null,
+                    'id_formateur'     => $item->id_formateur,
+                    'qte'             => $item->qte * $request->qte,
+                    'idplat'          => $idsPlat
+                ]);
+            }
+        }
+        else
+        {
+        
+        $TempVente = TempVente::where('idplat',$request->idremove)->delete();
+        }
+        
+
+        return response()->json([
+            'status' => 200,
+            
+        ]);
+    }
+
 
 /**
  * Search product names for autocomplete in filters

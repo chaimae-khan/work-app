@@ -337,5 +337,6 @@ Route::get('getPlatsByType', [PlatsController::class, 'getPlatsByType']);
     Route::get('/ShowPlatDetail/{id}', [PlatCompositionController::class, 'ShowPlatDetail']);
 
 
+    Route::get('sendPlatToTmpVente'      ,[VenteController::class,'sendPlatToTmpVente']);
 });
 

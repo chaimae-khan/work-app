@@ -1,6 +1,7 @@
 @extends('dashboard.index')
 
 @section('dashboard')
+
 <script src="{{asset('js/plat_composition/script.js')}}"></script>
 {{-- <script src="{{asset('js/vente/script.js')}}"></script> --}}
 <script>

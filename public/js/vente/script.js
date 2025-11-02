@@ -812,10 +812,15 @@ $('#BtnSaveVente').on('click', function(e) {
         const accompagnement = $('#accompagnement').val();
         const dessert = $('#dessert').val();
         
-        requestData.entree = entree && entree.trim() !== '' ? entree : null;
-        requestData.plat_principal = platPrincipal && platPrincipal.trim() !== '' ? platPrincipal : null;
+        /* requestData.entree = entree && entree.trim() !== '' ? entree : null; */
+        requestData.entree = (Array.isArray(entree) ? entree.join(',') : entree)?.trim() || null;
+        requestData.platPrincipal = (Array.isArray(platPrincipal) ? platPrincipal.join(',') : platPrincipal)?.trim() || null;
+        requestData.accompagnement = (Array.isArray(accompagnement) ? accompagnement.join(',') : accompagnement)?.trim() || null;
+        requestData.dessert = (Array.isArray(dessert) ? dessert.join(',') : dessert)?.trim() || null;
+
+        /* requestData.plat_principal = platPrincipal && platPrincipal.trim() !== '' ? platPrincipal : null;
         requestData.accompagnement = accompagnement && accompagnement.trim() !== '' ? accompagnement : null;
-        requestData.dessert = dessert && dessert.trim() !== '' ? dessert : null;
+        requestData.dessert = dessert && dessert.trim() !== '' ? dessert : null; */
     } else {
        
         
@@ -1696,5 +1701,11 @@ $('#filter_designation').on('keydown', function(e) {
         triggerProductSearch();
     }
 });
+
+
+
+
+
+
 
 });

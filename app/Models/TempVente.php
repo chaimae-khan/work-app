@@ -18,6 +18,7 @@ class TempVente extends Model
         'id_client',
         'id_formateur', // Added new field for formateur
         'qte',
+        'idplat'
     ];
 
     /**

@@ -3,9 +3,21 @@
 @section('dashboard')
 
 <!-- Scripts personnalisés -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+
 <script src="{{asset('js/vente/script.js')}}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@6.5.95/css/materialdesignicons.min.css">
+
+
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.0.0-rc.4/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.0.0-rc.4/dist/js/tom-select.complete.min.js"></script>
+
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
 <script>
     var getSubcategories_url = "{{ url('getSubcategories') }}";
     var getRayons_url = "{{ url('getRayons') }}";
@@ -30,7 +42,8 @@
     var getCategoriesByClass_url = "{{ route('vente.categories.by.class') }}";
     var getVenteSubcategories_url = "{{ route('vente.subcategories', ':id') }}";
     var searchVenteProducts_url = "{{ route('vente.search.products') }}";
-    var getcategorybytypemenu = "{{ url('getcategorybytypemenu') }}"
+    var getcategorybytypemenu = "{{ url('getcategorybytypemenu') }}";
+    var sendPlatToTmpVente   = "{{ url('sendPlatToTmpVente') }}";
 </script>
 
 <style>
@@ -218,8 +231,17 @@
                                                 <div class="col-md-6">
                                                     <div class="form-group mb-3">
                                                         <label for="entree" class="form-label"><i class="mdi mdi-food-fork-drink"></i> Entrée</label>
-                                                        <input type="text" class="form-control" id="entree" name="entree" 
-                                                               placeholder="Ex: Salade de Tomates et Concombre">
+                                                        {{-- <input type="text" class="form-control" id="entree" name="entree" 
+                                                               placeholder="Ex: Salade de Tomates et Concombre"> --}}
+                                                               <select id="entree" name="entrees[]" multiple placeholder="Choose plat entrée">
+            @foreach ($Plat_Entre as $item)
+                <option value="{{ $item->id }}">{{ $item->name }}</option>
+            @endforeach
+        </select>
+
+
+
+                                                               
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
@@ -618,29 +640,186 @@
     @endcan
     <script>
     $('#Class_Categorie').on('change',function()
-{
-    let name = $(this).val();
+    {
+        let name = $(this).val();
+        
+        $.ajax({
+            type: "GET",
+            url: GetCategorieByClass,
+            data: 
+            {
+                class : name,
+            },
+            dataType: "json",
+            success: function (response) {
+                if(response.status == 200)
+                {
+                    let $dropdown =$('#Categorie_Class');
+                    $dropdown.empty();
+                    
+                    $.each(response.data,function(index, item){
+                        $dropdown.append('<option value="' +item.id+ '">' + item.name + '</option>');
+                    });
+                }
+            }
+        });
+    });
+
+    /********************** get tmp vente ****************************/
+    let Formateur = $('#DropDown_formateur').val();
+
+let activeDataTables = {
+    tmpVente: null,
+    productSearch: null
+};
+let Plat = "Plat";
+// Initialize or redraw tmpVente DataTable
+function initializeTableTmpVente(selector, Formateur,Plat) {
+    console.log("Initializing tmp vente table for Formateur ID:", Formateur);
+
+    // Destroy if exists
+    if (activeDataTables.tmpVente) {
+        activeDataTables.tmpVente.destroy();
+        $(selector).empty(); // clear table HTML
+        activeDataTables.tmpVente = null;
+    }
+
+    // Initialize DataTable
+    activeDataTables.tmpVente = $(selector).DataTable({
+        select: true,
+        processing: true,
+        serverSide: true,
+        destroy: true,
+        autoWidth: false,
+        ajax: {
+            url: GetTmpVenteByFormateur,
+            type: 'GET',
+            dataType: 'json',
+            data: function(d) {
+                d.id_formateur = Formateur;
+                d.Plat         = Plat;
+            },
+            error: function(xhr, error, code) {
+                console.error('Error fetching tmp vente:', error);
+                console.error('XHR Response:', xhr.responseText);
+            }
+        },
+        columns: [
+            { data: 'name', name: 'name', title: 'Produit' },
+            { data: 'qte', name: 'qte', title: 'Quantité' },
+            { data: 'formateur_name', name: 'formateur_name', title: 'Formateur' },
+            { data: 'action', name: 'action', title: 'Action', orderable: false, searchable: false }
+        ],
+        rowCallback: function(row, data) {
+            $(row).attr('id', data.id);
+        },
+        language: {
+            "sInfo": "Affichage de l'élément _START_ à _END_ sur _TOTAL_ éléments",
+            "sInfoEmpty": "Affichage de l'élément 0 à 0 sur 0 élément",
+            "sInfoFiltered": "(filtré à partir de _MAX_ éléments au total)",
+            "sLengthMenu": "Afficher _MENU_ éléments",
+            "sLoadingRecords": "Chargement...",
+            "sProcessing": "Traitement...",
+            "sSearch": "Rechercher :",
+            "sZeroRecords": "Aucun élément correspondant trouvé",
+            "oPaginate": {
+                "sFirst": "Premier",
+                "sLast": "Dernier",
+                "sNext": "Suivant",
+                "sPrevious": "Précédent"
+            }
+        },
+        drawCallback: function() {
+            console.log("Table drawn successfully");
+        }
+    });
+
+    // Re-attach event handlers for action buttons if needed
     
+
+    return activeDataTables.tmpVente;
+}
+
+/********************** TomSelect for entree ****************************/
+const tomselect_entree = new TomSelect("#entree", {
+    plugins: ['remove_button'],
+    create: false,
+    render: {
+        option: function(data, escape) {
+            return '<div>' + escape(data.text) + '</div>';
+        },
+        item: function(data, escape) {
+            return '<div>' + escape(data.text) + '</div>';
+        }
+    }
+});
+
+// Handle change event
+    let lastSelectedValue = null;
+
+    tomselect_entree.on('item_add', function() {
+        let allSelected = this.getValue(); // could be array or string
+
+        // If multi-select, take only the last one
+        let idplat;
+        if (Array.isArray(allSelected)) {
+            idplat = allSelected[allSelected.length - 1]; // last selected value
+            lastSelectedValue = idplat; // store for reference
+        } else {
+            idplat = allSelected; // single select
+            lastSelectedValue = idplat;
+        }
+
+        let nomber_eleve        = parseInt($('#eleves').val()) || 0;
+        let Nombre_de_personnel = parseInt($('#personnel').val()) || 0;
+        let Nombre_dinvités     = parseInt($('#invites').val()) || 0;
+        let divers              = parseInt($('.divers').val()) || 0;
+
+        let total = nomber_eleve + Nombre_de_personnel + Nombre_dinvités + divers;
+        let qte = total / 10;
+       
+        if(total < 10) {
+            alert('Erreur : le total doit être au moins 10 !');
+            return false; 
+        }
+
+        $.ajax({
+            type: "get",
+            url: sendPlatToTmpVente,
+            data: { idplat: idplat,idremove : null,qte:qte }, // now only last selected
+            dataType: "json",
+            success: function(response) {
+                if(response.status == 200) {
+                    initializeTableTmpVente('.TableTmpVente', Formateur,"Plat");
+                }
+            }
+        });
+    });
+
+
+    tomselect_entree.on('item_remove', function(value) {
+    
+
     $.ajax({
-        type: "GET",
-        url: GetCategorieByClass,
-        data: 
-        {
-            class : name,
+        type: "get",
+        url: sendPlatToTmpVente, // or a separate remove endpoint
+        data: { 
+            idremove: value // only the removed item
         },
         dataType: "json",
-        success: function (response) {
-            if(response.status == 200)
-            {
-                let $dropdown =$('#Categorie_Class');
-                $dropdown.empty();
-                
-                $.each(response.data,function(index, item){
-                    $dropdown.append('<option value="' +item.id+ '">' + item.name + '</option>');
-                });
+        success: function(response) {
+            if(response.status == 200) {
+                initializeTableTmpVente('.TableTmpVente', Formateur ,"Plat");
             }
         }
     });
 });
+
+
+// Initialize table on page load
+$(document).ready(function() {
+    initializeTableTmpVente('.TableTmpVente', Formateur,"Plat");
+});
+
 </script>
 </div>@endsection
