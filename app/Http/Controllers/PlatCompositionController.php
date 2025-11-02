@@ -39,15 +39,20 @@ class PlatCompositionController extends Controller
         if ($request->ajax()) {
             $Data_Plat = DB::table('plats as p')
                 ->join('users as us', 'us.id', '=', 'p.iduser')
+                ->join('ligne_plat as l', 'l.id_plat', '=', 'p.id')
+                ->join('products as pro', 'pro.id', '=', 'l.idproduit')
+                ->join('unite as u', 'u.id', '=', 'pro.id_unite')
                 ->select(
-                    'p.id',
-                    'p.name',
-                    'p.type',
+                    'l.id',
+                    'pro.name',
+                    'p.name as nom_plat',
                     DB::raw("CONCAT(us.prenom, ' ', us.nom) as created_by"),
-                    'p.created_at'
+                    'l.created_at',
+                    'l.qte','l.nombre_couvert',
+                    'u.name as unite'
                 )
-                ->whereNull('p.deleted_at')
-                ->orderBy('p.id', 'desc');
+                ->whereNull('l.deleted_at')
+                ->orderBy('l.id', 'desc');
 
             return DataTables::of($Data_Plat)
                 ->addIndexColumn()

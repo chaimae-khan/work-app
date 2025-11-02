@@ -25,9 +25,11 @@ $(document).ready(function () {
                     }
                 },
                 columns: [
+                    { data: 'nom_plat', name: 'nom_plat' },
                     { data: 'name', name: 'name' },
-                    { data: 'type', name: 'type' },
-                    { data: 'created_by', name: 'created_by' },
+                    { data: 'qte', name: 'qte' },
+                    { data: 'unite', name: 'unite' },
+                    { data: 'nombre_couvert', name: 'nombre_couvert' },
                     { data: 'created_at', name: 'created_at' },
                     { data: 'action', name: 'action', orderable: false, searchable: false }
                 ],
@@ -338,7 +340,7 @@ $(document).ready(function () {
     }
 
     // Product search - Add mode
-    $('.input_products_plat').on('keydown', function(e) {
+    $('.input_products').on('keydown', function(e) {
         if (e.keyCode === 13) {
             e.preventDefault();
             
@@ -361,7 +363,7 @@ $(document).ready(function () {
                 success: function(response) {
                     if (response.status == 200) {
                         initializeTableProduct('.TableProductPlat', response.data, false);
-                        $('.input_products_plat').val("");
+                        $('.input_products').val("");
                     } else {
                         new AWN().info("Aucun produit trouvé", {durations: {info: 5000}});
                     }
@@ -371,7 +373,7 @@ $(document).ready(function () {
     });
 
     // Product search - Edit mode
-    $('.input_products_plat_edit').on('keydown', function(e) {
+    $('.input_products_edit').on('keydown', function(e) {
         if (e.keyCode === 13) {
             e.preventDefault();
             
@@ -395,7 +397,7 @@ $(document).ready(function () {
                 success: function(response) {
                     if (response.status == 200) {
                         initializeTableProduct('.TableProductPlatEdit', response.data, true);
-                        $('.input_products_plat_edit').val("");
+                        $('.input_products_edit').val("");
                     } else {
                         new AWN().info("Aucun produit trouvé", {durations: {info: 5000}});
                     }

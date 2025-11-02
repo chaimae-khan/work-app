@@ -2,6 +2,7 @@
 
 @section('dashboard')
 <script src="{{asset('js/plat_composition/script.js')}}"></script>
+<script src="{{asset('js/vente/script.js')}}"></script>
 <script>
     var csrf_token = "{{csrf_token()}}";
     var getPlatsByTypeForComposition = "{{url('getPlatsByTypeForComposition')}}";
@@ -15,6 +16,8 @@
     var EditPlatComposition = "{{url('EditPlatComposition')}}";
     var UpdatePlatComposition = "{{url('UpdatePlatComposition')}}";
     var DeletePlatComposition = "{{url('DeletePlatComposition')}}";
+    var getcategorybytypemenu = "{{ url('getcategorybytypemenu') }}"
+    var getProduct = "{{url('getProduct')}}";
 </script>
 
 <style>
@@ -56,8 +59,10 @@
                                     <thead class="thead-light">
                                         <tr>
                                             <th scope="col">Nom du plat</th>
-                                            <th scope="col">Type</th>
-                                            <th scope="col">Créé par</th>
+                                            <th scope="col">Ingrédients</th>
+                                            <th scope="col">Quantité</th>
+                                            <th scope="col">Unite</th>
+                                            <th scope="col">Nombre de couvert</th>
                                             <th scope="col">Créé le</th>
                                             <th scope="col">Action</th>    
                                         </tr>
@@ -107,9 +112,51 @@
                                             <input type="number" min="1" class="form-control" id="nombre_couvert" value="1">
                                         </div>
                                         
-                                        <div class="form-group mt-3">
+                                       {{--  <div class="form-group mt-3">
                                             <label>Rechercher un produit</label>
-                                            <input type="text" class="form-control input_products_plat" placeholder="Entrez le nom du produit">
+                                            <input type="text" class="form-control input_products" placeholder="Entrez le nom du produit">
+                                        </div> --}}
+                                        <div class="row">
+                                            <div class="col-sm-12 col-md-12 col-xl-3">
+                                                <div class="form-group">
+                                                    <label for="">Class</label>
+                                                    <select name="type_commande" class="form-select" id="type_commande">
+                                                        <option value="0" selected>Please selected type order</option>
+                                                        <option value="Alimentaire" >Alimentaire</option>
+                                                       
+                                                    </select>
+                                                </div>
+                                                
+                                            </div>
+
+                                            <div class="col-sm-12 col-md-12 col-xl-3">
+                                                <div class="form-group">
+                                                    <label for="">Catégorie</label>
+                                                    <select class="form-select" id="filter_categorie" name="filter_categorie">
+                                                        <option value="">Toutes les catégories</option>
+                                                        
+                                                    </select>
+                                                </div>
+                                                
+                                            </div>
+
+                                            <div class="col-sm-12 col-md-12 col-xl-3">
+                                                <div class="form-group">
+                                                    <label for="">Famille</label>
+                                                    <select class="form-select" id="filter_subcategorie" name="filter_subcategorie">
+                                                        <option value="">Toutes les familles</option>
+                                                    </select>
+                                                </div>
+                                                
+                                            </div>
+
+                                            <div class="col-sm-12 col-md-12 col-xl-3">
+                                                <div class="form-group">
+                                                    <label for="">Desgination</label>
+                                                    <input type="text" class="form-control input_products" placeholder="Entrez le nom du produit">
+                                                </div>
+                                                
+                                            </div>
                                         </div>
                                         
                                         <div class="form-group mt-3">
@@ -226,7 +273,7 @@
                                         
                                         <div class="form-group mt-3">
                                             <label>Rechercher un produit</label>
-                                            <input type="text" class="form-control input_products_plat_edit" placeholder="Entrez le nom du produit">
+                                            <input type="text" class="form-control input_products_edit" placeholder="Entrez le nom du produit">
                                         </div>
                                         
                                         <div class="form-group mt-3">
