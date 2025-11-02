@@ -231,40 +231,45 @@
                                                 <div class="col-md-6">
                                                     <div class="form-group mb-3">
                                                         <label for="entree" class="form-label"><i class="mdi mdi-food-fork-drink"></i> Entrée</label>
-                                                        {{-- <input type="text" class="form-control" id="entree" name="entree" 
-                                                               placeholder="Ex: Salade de Tomates et Concombre"> --}}
-                                                               <select id="entree" name="entrees[]" multiple placeholder="Choose plat entrée">
-            @foreach ($Plat_Entre as $item)
-                <option value="{{ $item->id }}">{{ $item->name }}</option>
-            @endforeach
-        </select>
-
-
-
-                                                               
+                                                        <select id="entree" name="entrees[]" multiple placeholder="Choose plat entrée">
+                                                            @foreach ($Plat_Entre as $item)
+                                                                <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                                            @endforeach
+                                                        </select>    
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="form-group mb-3">
                                                         <label for="plat_principal" class="form-label"><i class="mdi mdi-food"></i> Plat Principal</label>
-                                                        <input type="text" class="form-control" id="plat_principal" name="plat_principal" 
-                                                               placeholder="Ex: Tajine de Viande">
+                                                        {{-- <input type="text" class="form-control" id="plat_principal" name="plat_principal" 
+                                                               placeholder="Ex: Tajine de Viande"> --}}
+
+                                                        <select id="plat_principal" name="plat_principal[]" multiple placeholder="Choose plat principal">
+                                                            @foreach ($Plat_Principal as $item)
+                                                                <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                                            @endforeach
+                                                        </select>   
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="row">
-                                                <div class="col-md-6">
+                                                {{-- <div class="col-md-6">
                                                     <div class="form-group mb-3">
                                                         <label for="accompagnement" class="form-label"><i class="mdi mdi-bread-slice"></i> Accompagnement</label>
                                                         <input type="text" class="form-control" id="accompagnement" name="accompagnement" 
                                                                placeholder="Ex: Pain, Riz">
                                                     </div>
-                                                </div>
+                                                </div> --}}
                                                 <div class="col-md-6">
                                                     <div class="form-group mb-3">
                                                         <label for="dessert" class="form-label"><i class="mdi mdi-cupcake"></i> Dessert</label>
-                                                        <input type="text" class="form-control" id="dessert" name="dessert" 
-                                                               placeholder="Ex: Jawhara">
+                                                       {{--  <input type="text" class="form-control" id="dessert" name="dessert" 
+                                                               placeholder="Ex: Jawhara"> --}}
+                                                        <select id="dessert" name="dessert[]" multiple placeholder="Choose plat entrée">
+                                                            @foreach ($Plat_Dessert as $item)
+                                                                <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                                            @endforeach
+                                                        </select>         
                                                     </div>
                                                 </div>
                                             </div>
@@ -277,39 +282,15 @@
                                     <ul class="validationVente"></ul>
                                 </div>
 
-                                <!-- <div class="form-group mt-2">
-                                    <div class="row">
-                                        <div class="col-6">
-                                            <label for="" class="form-label">Produit</label>
-                                            <input type="text" class="form-control input_products" placeholder="Entrez votre produit">
-                                        </div>
-                                        <div class="col-6">
-                                            <label for="" class="form-label">Class</label>
-                                            <input type="text" class="form-control input_products" placeholder="Entrez votre produit">
-                                        </div>
-                                       
-                                    </div>
-                                    
-                                    
-                                </div> -->
+                              
                                 <div class="row mb-3">
-                                    {{-- <div class="col-md-3">
-                                        <label for="filter_class" class="form-label">Classe</label>
-                                        <select class="form-select" id="filter_class" name="filter_class">
-                                            <option value="">Toutes les classes</option>
-                                            @foreach($class as $cl)
-                                                <option value="{{ $cl->classe }}">{{ $cl->classe }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div> --}}
+                                    
                                     
                                     <div class="col-md-4">
                                         <label for="filter_categorie" class="form-label">Catégorie</label>
                                         <select class="form-select" id="filter_categorie" name="filter_categorie">
                                             <option value="">Toutes les catégories</option>
-                                            {{-- @foreach ($categories as $item)
-                                                <option value="{{ $item->id }}">{{ $item->name }}</option>
-                                            @endforeach --}}
+                                           
                                         </select>
                                     </div>
                                     
@@ -531,19 +512,7 @@
 
                         <!-- Informations supplémentaires -->
                         <div class="row mb-3">
-                            <!-- <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Code barre</label>
-                                    <input type="text" name="code_barre" class="form-control">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Photo</label>
-                                    <input type="file" name="photo" id="photo" class="form-control" accept="image/*">
-                                </div>
-                                <div id="photo_preview" class="mt-2" style="display: none;"></div>
-                            </div> -->
+                           
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Date d'expiration</label>
@@ -814,6 +783,150 @@ const tomselect_entree = new TomSelect("#entree", {
         }
     });
 });
+
+const tomselect_principal = new TomSelect("#plat_principal", {
+    plugins: ['remove_button'],
+    create: false,
+    render: {
+        option: function(data, escape) {
+            return '<div>' + escape(data.text) + '</div>';
+        },
+        item: function(data, escape) {
+            return '<div>' + escape(data.text) + '</div>';
+        }
+    }
+});
+
+
+    let lastSelectedValuePrincipal = null;
+
+    tomselect_principal.on('item_add', function() {
+        let allSelected = this.getValue(); // could be array or string
+
+        // If multi-select, take only the last one
+        let idplat;
+        if (Array.isArray(allSelected)) {
+            idplat = allSelected[allSelected.length - 1]; // last selected value
+            lastSelectedValuePrincipal = idplat; // store for reference
+        } else {
+            idplat = allSelected; // single select
+            lastSelectedValuePrincipal = idplat;
+        }
+
+        let nomber_eleve        = parseInt($('#eleves').val()) || 0;
+        let Nombre_de_personnel = parseInt($('#personnel').val()) || 0;
+        let Nombre_dinvités     = parseInt($('#invites').val()) || 0;
+        let divers              = parseInt($('.divers').val()) || 0;
+
+        let total = nomber_eleve + Nombre_de_personnel + Nombre_dinvités + divers;
+        let qte = total / 10;
+       
+        if(total < 10) {
+            alert('Erreur : le total doit être au moins 10 !');
+            return false; 
+        }
+
+        $.ajax({
+            type: "get",
+            url: sendPlatToTmpVente,
+            data: { idplat: idplat,idremove : null,qte:qte }, // now only last selected
+            dataType: "json",
+            success: function(response) {
+                if(response.status == 200) {
+                    initializeTableTmpVente('.TableTmpVente', Formateur,"Plat");
+                }
+            }
+        });
+    });
+
+    tomselect_principal.on('item_remove', function(value) 
+    {
+        $.ajax({
+            type: "get",
+            url: sendPlatToTmpVente, // or a separate remove endpoint
+            data: { 
+                idremove: value // only the removed item
+            },
+            dataType: "json",
+            success: function(response) {
+                if(response.status == 200) {
+                    initializeTableTmpVente('.TableTmpVente', Formateur ,"Plat");
+                }
+            }
+        });
+    });
+
+    const tomselect_dessert = new TomSelect("#dessert", {
+        plugins: ['remove_button'],
+        create: false,
+        render: {
+            option: function(data, escape) {
+                return '<div>' + escape(data.text) + '</div>';
+            },
+            item: function(data, escape) {
+                return '<div>' + escape(data.text) + '</div>';
+            }
+        }
+    });
+
+    let lastSelectedValueDessert = null;
+
+    tomselect_dessert.on('item_add', function() {
+        let allSelected = this.getValue(); // could be array or string
+
+        // If multi-select, take only the last one
+        let idplat;
+        if (Array.isArray(allSelected)) {
+            idplat = allSelected[allSelected.length - 1]; // last selected value
+            lastSelectedValueDessert = idplat; // store for reference
+        } else {
+            idplat = allSelected; // single select
+            lastSelectedValueDessert = idplat;
+        }
+
+        let nomber_eleve        = parseInt($('#eleves').val()) || 0;
+        let Nombre_de_personnel = parseInt($('#personnel').val()) || 0;
+        let Nombre_dinvités     = parseInt($('#invites').val()) || 0;
+        let divers              = parseInt($('.divers').val()) || 0;
+
+        let total = nomber_eleve + Nombre_de_personnel + Nombre_dinvités + divers;
+        let qte = total / 10;
+       
+        if(total < 10) {
+            alert('Erreur : le total doit être au moins 10 !');
+            return false; 
+        }
+
+        $.ajax({
+            type: "get",
+            url: sendPlatToTmpVente,
+            data: { idplat: idplat,idremove : null,qte:qte }, // now only last selected
+            dataType: "json",
+            success: function(response) {
+                if(response.status == 200) {
+                    initializeTableTmpVente('.TableTmpVente', Formateur,"Plat");
+                }
+            }
+        });
+    });
+
+    tomselect_dessert.on('item_remove', function(value) 
+    {
+        $.ajax({
+            type: "get",
+            url: sendPlatToTmpVente, // or a separate remove endpoint
+            data: { 
+                idremove: value // only the removed item
+            },
+            dataType: "json",
+            success: function(response) {
+                if(response.status == 200) {
+                    initializeTableTmpVente('.TableTmpVente', Formateur ,"Plat");
+                }
+            }
+        });
+    });
+
 
 
 // Initialize table on page load
