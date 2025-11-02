@@ -593,7 +593,7 @@ $(document).ready(function () {
                 data: {
                     id: perteId,
                     _token: csrf_token,
-                    _method: 'DELETE'
+                 
                 },
                 dataType: "json",
                 success: function (response) {

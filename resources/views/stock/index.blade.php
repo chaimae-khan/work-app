@@ -102,7 +102,7 @@
                                                     <th data-sortable="true">Emplacement</th>
                                                     <th data-sortable="true">Stock</th>
                                                     <th data-sortable="true">Prix d'achat</th>
-                                                    <th data-sortable="true">Taux TVA</th>
+                                                    <!-- <th data-sortable="true">Taux TVA</th> -->
                                                     <th data-sortable="true">Seuil</th>
                                                     <!-- <th data-sortable="true">Code barre</th>
                                                     <th data-sortable="false">Photo</th> -->

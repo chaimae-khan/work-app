@@ -86,7 +86,7 @@ class CompteController extends Controller
             // Define folder path (inside public/images/signatures)
             $folderPath = public_path('images/signatures');
 
-            // Create directory if it doesn’t exist
+            // Create directory if it doesn't exist
             if (!file_exists($folderPath)) {
                 mkdir($folderPath, 0777, true);
             }
@@ -94,15 +94,12 @@ class CompteController extends Controller
             // Save the image to /public/images/signatures
             file_put_contents($folderPath . '/' . $imageName, base64_decode($image));
 
-            // Save signature path in the database (you can use a Signature model if you have one)
+            // Save signature path in the database
             User::where('id',$user->id)->update([
                 'signature'=> 'images/signatures/' . $imageName,
             ]);
-           /*  User::updateOrCreate(
-                ['id' => $user->id],
-                ['signature' => 'images/signatures/' . $imageName]
-            ); */
         }
+        
         if (!$user) {
             return response()->json([
                 'status' => 404,
@@ -111,7 +108,8 @@ class CompteController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
+            'nom' => 'required|string|max:255',
+            'prenom' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,'.$user->id,
             'password' => 'nullable|min:6|confirmed',
             'password_confirmation' => 'nullable|min:6',
@@ -122,7 +120,8 @@ class CompteController extends Controller
             'password.min' => 'Le mot de passe doit contenir au moins 6 caractères.',
             'password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
         ], [
-            'name' => 'nom complet',
+            'nom' => 'nom',
+            'prenom' => 'prénom',
             'email' => 'adresse email',
             'password' => 'mot de passe',
             'password_confirmation' => 'confirmation du mot de passe',
@@ -137,7 +136,8 @@ class CompteController extends Controller
 
         // Mise à jour des informations de base
         $updateData = [
-            'name' => $request->name,
+            'nom' => $request->nom,
+            'prenom' => $request->prenom,
             'email' => $request->email,
         ];
 
@@ -170,6 +170,7 @@ class CompteController extends Controller
         
         $user = Auth::user();
         $image = $request->image;
+        
         if (!empty($image)) 
         {
             // Clean the base64 string
@@ -182,7 +183,7 @@ class CompteController extends Controller
             // Define folder path (inside public/images/signatures)
             $folderPath = public_path('images/signatures');
 
-            // Create directory if it doesn’t exist
+            // Create directory if it doesn't exist
             if (!file_exists($folderPath)) {
                 mkdir($folderPath, 0777, true);
             }
@@ -190,15 +191,12 @@ class CompteController extends Controller
             // Save the image to /public/images/signatures
             file_put_contents($folderPath . '/' . $imageName, base64_decode($image));
 
-            // Save signature path in the database (you can use a Signature model if you have one)
+            // Save signature path in the database
             User::where('id',$user->id)->update([
                 'signature'=> 'images/signatures/' . $imageName,
             ]);
-           /*  User::updateOrCreate(
-                ['id' => $user->id],
-                ['signature' => 'images/signatures/' . $imageName]
-            ); */
         }
+        
         $validator = Validator::make($request->all(), [
             'current_password' => 'required',
         ], [

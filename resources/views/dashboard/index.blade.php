@@ -269,7 +269,29 @@
                                <i class="fa-solid fa-warehouse"></i>
                                <span> Stock </span>
                              </a>
-                            </li> 
+                            </li>
+                            <li>
+    <a class="tp-link" href="{{ url('stock/low-stock') }}">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span> Surveillance des stocks faibles </span>
+    </a>
+</li>
+
+ <li>
+    <a class="tp-link" href="{{ url('pertes') }}">
+        <i class="fa-solid fa-trash"></i>
+        <span>Gestion des Pertes</span>
+    </a>
+</li>
+
+<li>
+    <a class="tp-link" href="{{ url('stock/expiring') }}">
+        <i class="fa-solid fa-hourglass-end"></i>
+        <span>Produits proches de l’expiration ou expirés</span>
+    </a>
+</li>
+
+
 @can('Voir-Stock-Demandeur')
 <li>
     <a class='tp-link' href="{{url('formateur-stock')}}">

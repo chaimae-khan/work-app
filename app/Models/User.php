@@ -32,6 +32,7 @@ class User extends Authenticatable implements Auditable
         'password',
         'telephone',
         'fonction',
+        'signature',
     ];
 
     /**

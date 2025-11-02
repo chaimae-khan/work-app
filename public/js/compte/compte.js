@@ -18,7 +18,16 @@ $(document).ready(function() {
     $('#BtnEditProfile').on('click', function(e) {
         e.preventDefault();
         
-        $('#name').val($('#user-name').text().trim());
+        // Get the full name and split it
+        var fullName = $('#user-name').text().trim();
+        var nameParts = fullName.split(' ');
+        
+        // Assume first part is prenom, rest is nom
+        var prenom = nameParts[0] || '';
+        var nom = nameParts.slice(1).join(' ') || '';
+        
+        $('#prenom').val(prenom);
+        $('#nom').val(nom);
         $('#email').val($('#user-email').text().trim());
         
         $('.profile-info-section').show();
@@ -50,7 +59,16 @@ $(document).ready(function() {
         
         $('#current_password, #password, #password_confirmation').val('');
         
-        $('#name').val($('#user-name').text().trim());
+        // Get the full name and split it
+        var fullName = $('#user-name').text().trim();
+        var nameParts = fullName.split(' ');
+        
+        // Assume first part is prenom, rest is nom
+        var prenom = nameParts[0] || '';
+        var nom = nameParts.slice(1).join(' ') || '';
+        
+        $('#prenom').val(prenom);
+        $('#nom').val(nom);
         $('#email').val($('#user-email').text().trim());
         
         $('#ModalEditProfileLabel').text('Changer mon mot de passe');
@@ -224,7 +242,10 @@ $(document).ready(function() {
                     new AWN().success(response.message, {durations: {success: 5000}});
                     $('#ModalEditProfile').modal('hide');
                     
-                    $('#user-name').text(formData.get('name'));
+                    // Update the display with prenom and nom
+                    var prenom = formData.get('prenom');
+                    var nom = formData.get('nom');
+                    $('#user-name').text(prenom + ' ' + nom);
                     $('#user-email').text(formData.get('email'));
                     
                     $('#FormUpdateProfile')[0].reset();

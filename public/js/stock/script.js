@@ -280,7 +280,6 @@ function loadFilterSubcategories(categoryId) {
             { data: 'emplacement', name: 'p.emplacement' },
             { data: 'quantite', name: 's.quantite' },
             { data: 'price_achat', name: 'p.price_achat' },
-            { data: 'tva_value', name: 't.value' },
             { data: 'seuil', name: 'p.seuil' },
             // { data: 'code_barre', name: 'p.code_barre' },
             // { 

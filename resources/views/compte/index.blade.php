@@ -33,10 +33,10 @@
                             <div class="pt-2 pb-2">
                                 <div class="avatar-xl mx-auto">
                                     <span class="avatar-title rounded-circle bg-primary-subtle text-primary">
-                                        {{ strtoupper(substr($user->name, 0, 1)) }}
+                                        {{ strtoupper(substr($user->prenom, 0, 1)) }}
                                     </span>
                                 </div>
-                                <h4 class="mt-3 mb-1" id="user-name">{{ $user->name }}</h4>
+                                <h4 class="mt-3 mb-1" id="user-name">{{ $user->prenom }} {{ $user->nom }}</h4>
                                 <p class="text-muted">{{ $userRoles }}</p>
                                 
                                 <button id="BtnEditProfile" class="btn btn-primary mt-2">
@@ -145,10 +145,16 @@
                         <form action="{{ url('updateProfile') }}" id="FormUpdateProfile">
                             <!-- Informations personnelles -->
                             <div class="row mb-3 profile-info-section">
-                                <div class="col-md-12">
+                                <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>Nom complet</label>
-                                        <input type="text" id="name" name="name" class="form-control" value="{{ $user->name }}">
+                                        <label>Prénom</label>
+                                        <input type="text" id="prenom" name="prenom" class="form-control" value="{{ $user->prenom }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Nom</label>
+                                        <input type="text" id="nom" name="nom" class="form-control" value="{{ $user->nom }}">
                                     </div>
                                 </div>
                             </div>

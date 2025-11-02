@@ -4,6 +4,26 @@
 <!-- External Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@6.5.95/css/materialdesignicons.min.css">
+<!-- Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    flatpickr(".datepicker-perte", {
+        locale: "fr",            
+        dateFormat: "Y-m-d",      
+        altInput: true,
+        altFormat: "j F Y",        
+        allowInput: false,
+        clickOpens: true,
+        maxDate: "today"          
+    });
+});
+</script>
 
 <!-- JS Variables -->
 <script>
@@ -211,16 +231,14 @@
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Date de perte -->
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Date de la perte <span class="text-danger">*</span></label>
-                                            <input type="date" name="date_perte" class="form-control" required max="{{ date('Y-m-d') }}">
-                                        </div>
-                                    </div>
-                                </div>
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="form-group">
+            <label>Date de la perte <span class="text-danger">*</span></label>
+            <input type="text" name="date_perte" class="form-control datepicker-perte" placeholder="Choisissez une date" required>
+        </div>
+    </div>
+</div>
 
                                 <!-- Cause -->
                                 <div class="row mb-3">
