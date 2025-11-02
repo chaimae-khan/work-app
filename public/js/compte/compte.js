@@ -1,40 +1,6 @@
 $(document).ready(function() {
-    const canvas = document.getElementById('signature-pad');
     let signaturePad = null;
     
-    // Initialize SignaturePad only if canvas exists
-    if (canvas) {
-        signaturePad = new SignaturePad(canvas, {
-            backgroundColor: 'rgb(255, 255, 255)'
-        });
-    }
-
-    // Button to change existing signature
-    $('#BtnChangeSignature').on('click', function() {
-        $('#signature-display').hide();
-        $('#signature-canvas-container').show();
-        // Clear the canvas for new signature
-        if (signaturePad) {
-            signaturePad.clear();
-        }
-    });
-
-    // Button to clear signature pad
-    $('#BtnClearSignature').on('click', function() {
-        if (signaturePad) {
-            signaturePad.clear();
-        }
-    });
-
-    // Button to cancel signature editing (only if signature exists)
-    $('#BtnCancelSignature').on('click', function() {
-        $('#signature-canvas-container').hide();
-        $('#signature-display').show();
-        if (signaturePad) {
-            signaturePad.clear();
-        }
-    });
-
     // Fonctionnalité pour montrer/cacher le mot de passe
     $('.toggle-password').on('click', function() {
         const passwordField = $($(this).data('toggle'));
@@ -63,6 +29,16 @@ $(document).ready(function() {
         $('#ModalEditProfileLabel').text('Modifier mon profil');
         
         $('#ModalEditProfile').modal('show');
+        
+        // Initialize SignaturePad after modal is shown
+        setTimeout(function() {
+            const canvas = document.getElementById('signature-pad');
+            if (canvas && !signaturePad) {
+                signaturePad = new SignaturePad(canvas, {
+                    backgroundColor: 'rgb(255, 255, 255)'
+                });
+            }
+        }, 300);
     });
     
     // Ouvrir le modal uniquement pour changer le mot de passe
@@ -84,6 +60,41 @@ $(document).ready(function() {
         setTimeout(function() {
             $('#current_password').focus();
         }, 500);
+    });
+    
+    // Button to change existing signature
+    $('#BtnChangeSignature').on('click', function() {
+        $('#signature-display').hide();
+        $('#signature-canvas-container').show();
+        
+        // Initialize SignaturePad if not already initialized
+        const canvas = document.getElementById('signature-pad');
+        if (canvas && !signaturePad) {
+            signaturePad = new SignaturePad(canvas, {
+                backgroundColor: 'rgb(255, 255, 255)'
+            });
+        }
+        
+        // Clear the canvas for new signature
+        if (signaturePad) {
+            signaturePad.clear();
+        }
+    });
+
+    // Button to clear signature pad
+    $('#BtnClearSignature').on('click', function() {
+        if (signaturePad) {
+            signaturePad.clear();
+        }
+    });
+
+    // Button to cancel signature editing (only if signature exists)
+    $('#BtnCancelSignature').on('click', function() {
+        $('#signature-canvas-container').hide();
+        $('#signature-display').show();
+        if (signaturePad) {
+            signaturePad.clear();
+        }
     });
     
     // Validation du formulaire de mise à jour du profil
@@ -258,4 +269,12 @@ $(document).ready(function() {
             }
         });
     }
+    
+    // Clean up signature pad when modal is closed
+    $('#ModalEditProfile').on('hidden.bs.modal', function() {
+        if (signaturePad) {
+            signaturePad.clear();
+            signaturePad = null;
+        }
+    });
 });

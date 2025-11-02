@@ -101,48 +101,28 @@
                                     @endforeach
                                 </div>
                             </div>
+                            
                             <hr class="my-4">
-                          <div class="mb-3">
-    <h6 class="fs-15 mb-2">Votre signature.</h6>
-    <p class="text-muted">Si vous n'avez pas votre signature, veuillez l'ajouter ici.</p>
-    <div class="mt-2">
-        @if(Auth::user()->signature)
-            <!-- Display existing signature -->
-            <div id="signature-display" class="border border-primary p-3 text-center">
-                <img src="{{ asset(Auth::user()->signature) }}" 
-                     alt="Signature" 
-                     style="max-width: 100%; height: auto; max-height: 200px;">
-                <div class="mt-2">
-                    <button type="button" class="btn btn-sm btn-warning" id="BtnChangeSignature">
-                        <i class="fas fa-edit"></i> Modifier la signature
-                    </button>
-                </div>
-            </div>
-            <!-- Hidden canvas for editing -->
-            <div id="signature-canvas-container" style="display: none;">
-                <canvas id="signature-pad" class="border border-red" width="600" height="200"></canvas>
-                <div class="mt-2">
-                    <button type="button" class="btn btn-sm btn-secondary" id="BtnClearSignature">
-                        <i class="fas fa-eraser"></i> Effacer
-                    </button>
-                    <button type="button" class="btn btn-sm btn-primary" id="BtnCancelSignature">
-                        <i class="fas fa-times"></i> Annuler
-                    </button>
-                </div>
-            </div>
-        @else
-            <!-- Show canvas if no signature exists -->
-            <div id="signature-canvas-container">
-                <canvas id="signature-pad" class="border border-red" width="600" height="200"></canvas>
-                <div class="mt-2">
-                    <button type="button" class="btn btn-sm btn-secondary" id="BtnClearSignature">
-                        <i class="fas fa-eraser"></i> Effacer
-                    </button>
-                </div>
-            </div>
-        @endif
-    </div>
-</div>
+                            
+                            <div class="mb-3">
+                                <h6 class="fs-15 mb-2">Votre signature</h6>
+                                <div class="mt-2">
+                                    @if(Auth::user()->signature)
+                                        <!-- Display existing signature -->
+                                        <div class="border border-primary p-3 text-center">
+                                            <img src="{{ asset(Auth::user()->signature) }}" 
+                                                 alt="Signature" 
+                                                 style="max-width: 100%; height: auto; max-height: 200px;">
+                                        </div>
+                                    @else
+                                        <!-- Message when no signature exists -->
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            Veuillez ajouter votre signature s'il vous plaît.
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <!-- Fin carte sécurité -->
@@ -153,7 +133,7 @@
     
     <!-- Modal d'édition du profil -->
     <div class="modal fade" id="ModalEditProfile" tabindex="-1" aria-labelledby="ModalEditProfileLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="ModalEditProfileLabel">Modifier mon profil</h5>
@@ -178,6 +158,43 @@
                                     <div class="form-group">
                                         <label>Adresse email</label>
                                         <input type="email" id="email" name="email" class="form-control" value="{{ $user->email }}">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-4 profile-info-section">
+                            
+                            <!-- Signature Section in Modal -->
+                            <div class="row mb-3 profile-info-section">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label>Signature</label>
+                                        @if(Auth::user()->signature)
+                                            <div id="signature-display" class="mb-2">
+                                                <div class="border border-secondary p-2 text-center" style="background-color: #f8f9fa;">
+                                                    <img src="{{ asset(Auth::user()->signature) }}" 
+                                                         alt="Signature actuelle" 
+                                                         style="max-width: 100%; height: auto; max-height: 150px;">
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-warning mt-2" id="BtnChangeSignature">
+                                                    <i class="fas fa-edit"></i> Modifier la signature
+                                                </button>
+                                            </div>
+                                        @endif
+                                        
+                                        <div id="signature-canvas-container" @if(Auth::user()->signature) style="display: none;" @endif>
+                                            <canvas id="signature-pad" class="border border-secondary" width="600" height="200" style="width: 100%; max-width: 600px;"></canvas>
+                                            <div class="mt-2">
+                                                <button type="button" class="btn btn-sm btn-secondary" id="BtnClearSignature">
+                                                    <i class="fas fa-eraser"></i> Effacer
+                                                </button>
+                                                @if(Auth::user()->signature)
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="BtnCancelSignature">
+                                                        <i class="fas fa-times"></i> Annuler
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
