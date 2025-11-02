@@ -134,6 +134,7 @@ class VenteController extends Controller
 
 
     $Plat_Entre = DB::select("select * from plats where type='Entrée'");
+    $Plat_Dessert = DB::select("select * from plats where type='Dessert'");
 
     return view('vente.index')
         ->with('formateurs', $formateurs)
@@ -144,6 +145,7 @@ class VenteController extends Controller
         ->with('tvas', $tvas)
         ->with('unites', $unites)
         ->with('Plat_Entre', $Plat_Entre)
+        ->with('Plat_Dessert', $Plat_Dessert)
         ->with('class',$class); 
         
 }
