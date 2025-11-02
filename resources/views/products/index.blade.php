@@ -5,6 +5,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@6.5.95/css/materialdesignicons.min.css">
 
+
+
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.0.0-rc.4/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.0.0-rc.4/dist/js/tom-select.complete.min.js"></script>
 <!-- JS Personnalisé - Charge après les bibliothèques externes -->
 <script>
     // Variables PHP vers JavaScript
@@ -553,6 +557,20 @@
     </div>
 </div>
 <script>
+
+
+    /* const tomselect_entree = new TomSelect("#name", {
+        plugins: ['remove_button'],
+        create: false,
+        render: {
+            option: function(data, escape) {
+                return '<div>' + escape(data.text) + '</div>';
+            },
+            item: function(data, escape) {
+                return '<div>' + escape(data.text) + '</div>';
+            }
+        }
+    }); */
     $('#Class_Categorie').on('change',function()
     {
         let name = $(this).val();

@@ -370,7 +370,48 @@ if ($request->filled('filter_designation')) {
                  $dateExpiration = null;
              }
              $idTva = $request->filled('id_tva') ? $request->id_tva : 1;
-             
+
+
+
+             /************************** Youssef  *******************/
+            $dateExpiration = $request->date_expiration;
+            $dateReception  = $request->date_reception;
+            $priceAchat     = $request->price_achat;
+
+            $existingProduct = Product::where('name', trim($request->name))
+            ->where('date_expiration', $dateExpiration)
+            ->where('price_achat', $priceAchat)
+            ->where('date_reception', $dateReception)
+            ->first();
+
+
+            if ($existingProduct) 
+            {
+                
+                $stock = Stock::where('id_product', $existingProduct->id)->first();
+
+                if ($stock) {
+                    $stock->quantite += $request->quantite;
+                    $stock->save();
+                } else {
+                    // if no stock record exists, create a new one
+                    Stock::create([
+                        'id_product' => $existingProduct->id,
+                        'id_tva'     => $request->id_tva,
+                        'id_unite'   => $request->id_unite,
+                        'quantite'   => $request->quantite,
+                    ]);
+                }
+
+                DB::commit();
+
+                return response()->json([
+                    'status'  => 200,
+                    'message' => 'Quantity updated successfully for existing product.',
+                    'product' => $existingProduct,
+                ]);
+            }
+             /************************** End youssef check product **********/
              // Create product with the new foreign keys
              $product = Product::create([
                  'name' => trim($request->name),
