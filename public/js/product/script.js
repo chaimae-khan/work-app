@@ -36,9 +36,11 @@ function initializeDataTable() {
             ajax: {
                 url: products_url,
                 data: function(d) {
-                    // Add filter parameters
+                    // Add ALL filter parameters
+                    d.filter_class = $('#filter_class').val();
                     d.filter_categorie = $('#filter_categorie').val();
                     d.filter_subcategorie = $('#filter_subcategorie').val();
+                    d.filter_designation = $('#filter_designation').val();
                 },
                 dataSrc: function (json) {
                     if (json.data.length === 0) {
@@ -109,186 +111,186 @@ function initializeDataTable() {
         });
     
      
-   // Edit Product Handler
-$('.TableProducts tbody').on('click', '.editProduct', function(e) {
-    e.preventDefault();
-    var productId = $(this).attr('data-id');
-    
-    // Disable edit button during loading
-    $(this).prop('disabled', true);
-    
-    $.ajax({
-        type: "GET",
-        url: editProduct_url + "/" + productId,
-        dataType: "json",
-        success: function(response) {
-            // Enable edit button
-            $('.editProduct').prop('disabled', false);
+        // Edit Product Handler
+        $('.TableProducts tbody').on('click', '.editProduct', function(e) {
+            e.preventDefault();
+            var productId = $(this).attr('data-id');
             
-            // Detailed logging
-            console.log("Données du produit:", response);
+            // Disable edit button during loading
+            $(this).prop('disabled', true);
             
-            // Clear any previous dropdown options to prevent duplicates
-            $('#edit_Categorie_Class').empty().append('<option value="">Sélectionner une catégorie</option>');
-            $('#edit_id_subcategorie').empty().append('<option value="">Sélectionner une famille</option>');
-            $('#edit_id_rayon').empty().append('<option value="">Sélectionner un rayon</option>');
-            
-            // Show edit modal
-            $('#ModalEditProduct').modal("show");
-            
-            // Clear any previous validation errors
-            $('.validationEditProduct').html("").removeClass('alert alert-danger');
-            
-            // Populate basic product information
-            $('#edit_id').val(response.id);
-            $('#edit_name').val(response.name);
-            $('#edit_price_achat').val(response.price_achat);
-            $('#edit_code_barre').val(response.code_barre);
-            
-            // Handle photo path - ensure it's properly captured
-            if (!$('#current_photo_path').length) {
-                $('<input>').attr({
-                    type: 'hidden',
-                    id: 'current_photo_path',
-                    name: 'current_photo_path'
-                }).appendTo('#FormUpdateProduct');
-            }
-            
-            // Set the current photo path and show the image
-            if (response.photo) {
-                $('#current_photo_path').val(response.photo);
-                $('#current_photo_container').html('<img src="/storage/' + response.photo + '" alt="Current Photo" class="img-thumbnail" style="width: 100px; height: 100px;"><p class="mt-2">Photo actuelle</p>');
-                $('#current_photo_container').show();
-                console.log("Photo path stored:", response.photo);
-            } else {
-                $('#current_photo_path').val('');
-                $('#current_photo_container').hide();
-                console.log("No photo path to store");
-            }
-            
-            // Reset file input to ensure it doesn't retain previous selection
-            $('#edit_photo').val('');
-            $('#edit_photo_preview').hide();
-            
-            // Set date_expiration if exists
-            if (response.date_expiration) {
-                const expDate = new Date(response.date_expiration);
-                const formattedDate = expDate.toISOString().split('T')[0];
-                $('#edit_date_expiration').val(formattedDate);
-                console.log("Setting expiration date:", formattedDate);
-            } else {
-                $('#edit_date_expiration').val('');
-                console.log("No expiration date found");
-            }
-            
-            // Set seuil value directly from product
-            $('#edit_seuil').val(response.seuil);
-            
-            // Display code_article in a disabled field if you want to show it
-            if ($('#edit_code_article').length) {
-                $('#edit_code_article').val(response.code_article);
-            }
-            
-            // Set local dropdown
-            $('#edit_id_local').val(response.id_local);
-            
-            // Load rayons for the selected local
-            loadRayons('#edit_id_local', '#edit_id_rayon', response.id_rayon);
-            
-            // Handle class and category cascading dropdowns
-            if (response.class) {
-                // Set class value
-                $('#edit_Class_Categorie').val(response.class);
-                
-                // Load categories for this class, then set the category
-                $.ajax({
-                    type: "GET",
-                    url: GetCategorieByClass,
-                    data: { class: response.class },
-                    dataType: "json",
-                    success: function (classResponse) {
-                        if(classResponse.status == 200) {
-                            var categorySelect = $('#edit_Categorie_Class');
-                            categorySelect.empty().append('<option value="">Sélectionner une catégorie</option>');
-                            
-                            $.each(classResponse.data, function(index, item) {
-                                categorySelect.append('<option value="' + item.id + '">' + item.name + '</option>');
-                            });
-                            
-                            // Set the category value after categories are loaded
-                            categorySelect.val(response.id_categorie);
-                            
-                            // Load subcategories after category is set
-                            loadSubcategories('#edit_Categorie_Class', '#edit_id_subcategorie', response.id_subcategorie);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("Erreur de chargement des catégories:", error);
-                        // Fallback: load subcategories directly if class loading fails
+            $.ajax({
+                type: "GET",
+                url: editProduct_url + "/" + productId,
+                dataType: "json",
+                success: function(response) {
+                    // Enable edit button
+                    $('.editProduct').prop('disabled', false);
+                    
+                    // Detailed logging
+                    console.log("Données du produit:", response);
+                    
+                    // Clear any previous dropdown options to prevent duplicates
+                    $('#edit_Categorie_Class').empty().append('<option value="">Sélectionner une catégorie</option>');
+                    $('#edit_id_subcategorie').empty().append('<option value="">Sélectionner une famille</option>');
+                    $('#edit_id_rayon').empty().append('<option value="">Sélectionner un rayon</option>');
+                    
+                    // Show edit modal
+                    $('#ModalEditProduct').modal("show");
+                    
+                    // Clear any previous validation errors
+                    $('.validationEditProduct').html("").removeClass('alert alert-danger');
+                    
+                    // Populate basic product information
+                    $('#edit_id').val(response.id);
+                    $('#edit_name').val(response.name);
+                    $('#edit_price_achat').val(response.price_achat);
+                    $('#edit_code_barre').val(response.code_barre);
+                    
+                    // Handle photo path - ensure it's properly captured
+                    if (!$('#current_photo_path').length) {
+                        $('<input>').attr({
+                            type: 'hidden',
+                            id: 'current_photo_path',
+                            name: 'current_photo_path'
+                        }).appendTo('#FormUpdateProduct');
+                    }
+                    
+                    // Set the current photo path and show the image
+                    if (response.photo) {
+                        $('#current_photo_path').val(response.photo);
+                        $('#current_photo_container').html('<img src="/storage/' + response.photo + '" alt="Current Photo" class="img-thumbnail" style="width: 100px; height: 100px;"><p class="mt-2">Photo actuelle</p>');
+                        $('#current_photo_container').show();
+                        console.log("Photo path stored:", response.photo);
+                    } else {
+                        $('#current_photo_path').val('');
+                        $('#current_photo_container').hide();
+                        console.log("No photo path to store");
+                    }
+                    
+                    // Reset file input to ensure it doesn't retain previous selection
+                    $('#edit_photo').val('');
+                    $('#edit_photo_preview').hide();
+                    
+                    // Set date_expiration if exists
+                    if (response.date_expiration) {
+                        const expDate = new Date(response.date_expiration);
+                        const formattedDate = expDate.toISOString().split('T')[0];
+                        $('#edit_date_expiration').val(formattedDate);
+                        console.log("Setting expiration date:", formattedDate);
+                    } else {
+                        $('#edit_date_expiration').val('');
+                        console.log("No expiration date found");
+                    }
+                    
+                    // Set seuil value directly from product
+                    $('#edit_seuil').val(response.seuil);
+                    
+                    // Display code_article in a disabled field if you want to show it
+                    if ($('#edit_code_article').length) {
+                        $('#edit_code_article').val(response.code_article);
+                    }
+                    
+                    // Set local dropdown
+                    $('#edit_id_local').val(response.id_local);
+                    
+                    // Load rayons for the selected local
+                    loadRayons('#edit_id_local', '#edit_id_rayon', response.id_rayon);
+                    
+                    // Handle class and category cascading dropdowns
+                    if (response.class) {
+                        // Set class value
+                        $('#edit_Class_Categorie').val(response.class);
+                        
+                        // Load categories for this class, then set the category
+                        $.ajax({
+                            type: "GET",
+                            url: GetCategorieByClass,
+                            data: { class: response.class },
+                            dataType: "json",
+                            success: function (classResponse) {
+                                if(classResponse.status == 200) {
+                                    var categorySelect = $('#edit_Categorie_Class');
+                                    categorySelect.empty().append('<option value="">Sélectionner une catégorie</option>');
+                                    
+                                    $.each(classResponse.data, function(index, item) {
+                                        categorySelect.append('<option value="' + item.id + '">' + item.name + '</option>');
+                                    });
+                                    
+                                    // Set the category value after categories are loaded
+                                    categorySelect.val(response.id_categorie);
+                                    
+                                    // Load subcategories after category is set
+                                    loadSubcategories('#edit_Categorie_Class', '#edit_id_subcategorie', response.id_subcategorie);
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.error("Erreur de chargement des catégories:", error);
+                                // Fallback: load subcategories directly if class loading fails
+                                loadSubcategories('#edit_id_categorie', '#edit_id_subcategorie', response.id_subcategorie);
+                            }
+                        });
+                    } else {
+                        // Fallback for existing products without class - use old category dropdown
+                        $('#edit_id_categorie').val(response.id_categorie);
                         loadSubcategories('#edit_id_categorie', '#edit_id_subcategorie', response.id_subcategorie);
                     }
-                });
-            } else {
-                // Fallback for existing products without class - use old category dropdown
-                $('#edit_id_categorie').val(response.id_categorie);
-                loadSubcategories('#edit_id_categorie', '#edit_id_subcategorie', response.id_subcategorie);
-            }
-            
-            // Set TVA and Unite from product
-            // if (response.id_tva) {
-            //     $('#edit_id_tva').val(response.id_tva);
-            // } else if (response.stock && response.stock.id_tva) {
-            //     // Fallback to stock if product doesn't have it yet
-            //     $('#edit_id_tva').val(response.stock.id_tva);
-            // }
-            
-            if (response.id_unite) {
-                $('#edit_id_unite').val(response.id_unite);
-            } else if (response.stock && response.stock.id_unite) {
-                // Fallback to stock if product doesn't have it yet
-                $('#edit_id_unite').val(response.stock.id_unite);
-            }
-            
-            // Set stock quantity if stock exists
-            if (response.stock) {
-                $('#edit_quantite').val(response.stock.quantite);
-            } else {
-                // Reset stock quantity field if no stock data
-                $('#edit_quantite').val('');
-            }
-        },
-        error: function(xhr, status, error) {
-            // Enable edit button
-            $('.editProduct').prop('disabled', false);
-            
-            // Detailed error logging
-            console.error("Erreur lors de la récupération du produit:", {
-                status: status,
-                error: error,
-                responseText: xhr.responseText
-            });
-            
-            // User-friendly error notification
-            let errorMessage = "Erreur de chargement du produit";
-            
-            try {
-                // Try to parse error response
-                var errorResponse = JSON.parse(xhr.responseText);
-                if (errorResponse && errorResponse.message) {
-                    errorMessage = errorResponse.message;
+                    
+                    // Set TVA and Unite from product
+                    // if (response.id_tva) {
+                    //     $('#edit_id_tva').val(response.id_tva);
+                    // } else if (response.stock && response.stock.id_tva) {
+                    //     // Fallback to stock if product doesn't have it yet
+                    //     $('#edit_id_tva').val(response.stock.id_tva);
+                    // }
+                    
+                    if (response.id_unite) {
+                        $('#edit_id_unite').val(response.id_unite);
+                    } else if (response.stock && response.stock.id_unite) {
+                        // Fallback to stock if product doesn't have it yet
+                        $('#edit_id_unite').val(response.stock.id_unite);
+                    }
+                    
+                    // Set stock quantity if stock exists
+                    if (response.stock) {
+                        $('#edit_quantite').val(response.stock.quantite);
+                    } else {
+                        // Reset stock quantity field if no stock data
+                        $('#edit_quantite').val('');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // Enable edit button
+                    $('.editProduct').prop('disabled', false);
+                    
+                    // Detailed error logging
+                    console.error("Erreur lors de la récupération du produit:", {
+                        status: status,
+                        error: error,
+                        responseText: xhr.responseText
+                    });
+                    
+                    // User-friendly error notification
+                    let errorMessage = "Erreur de chargement du produit";
+                    
+                    try {
+                        // Try to parse error response
+                        var errorResponse = JSON.parse(xhr.responseText);
+                        if (errorResponse && errorResponse.message) {
+                            errorMessage = errorResponse.message;
+                        }
+                    } catch(e) {
+                        errorMessage = "Le format de la réponse est invalide. Veuillez contacter l'administrateur.";
+                        console.error("Erreur d'analyse JSON:", e);
+                    }
+                    
+                    // Show error notification
+                    new AWN().alert(errorMessage, { 
+                        durations: { alert: 5000 } 
+                    });
                 }
-            } catch(e) {
-                errorMessage = "Le format de la réponse est invalide. Veuillez contacter l'administrateur.";
-                console.error("Erreur d'analyse JSON:", e);
-            }
-            
-            // Show error notification
-            new AWN().alert(errorMessage, { 
-                durations: { alert: 5000 } 
             });
-        }
-    });
-});
+        });
 
         // Delete Product Handler
         $('.TableProducts tbody').on('click', '.deleteProduct', function(e) {
