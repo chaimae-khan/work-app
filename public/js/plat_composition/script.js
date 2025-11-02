@@ -339,39 +339,33 @@ $(document).ready(function () {
         return activeDataTables[tableKey];
     }
 
-    // Product search - Add mode
-    $('.input_products').on('keydown', function(e) {
-        if (e.keyCode === 13) {
-            e.preventDefault();
-            
-            let name_product = $(this).val().trim();
-            if (name_product === '') {
-                new AWN().warning('Veuillez saisir un nom de produit', {durations: {warning: 5000}});
-                return false;
-            }
-            
-            if (selectedPlatId == 0) {
-                new AWN().alert('Veuillez sélectionner un plat', {durations: {alert: 5000}});
-                return false;
-            }
-            
-            $.ajax({
-                type: "GET",
-                url: getProductForPlat,
-                data: { product: name_product },
-                dataType: "json",
-                success: function(response) {
-                    if (response.status == 200) {
-                        initializeTableProduct('.TableProductPlat', response.data, false);
-                        $('.input_products').val("");
-                    } else {
-                        new AWN().info("Aucun produit trouvé", {durations: {info: 5000}});
-                    }
-                }
-            });
-        }
-    });
+  $('.input_products').on('input', function (e) {
+    e.preventDefault();
 
+    clearTimeout(searchTimeoutt); // Cancel previous timer
+
+    let name_product = $('.input_products').val().trim();
+    let category = $("#filter_categorie").val();
+    let filter_subcategorie = $('#filter_subcategorie').val();
+    let type_commande = $('#type_commande').val();
+    let Formateur = $('#DropDown_formateur').val();
+
+    if (Formateur == 0) {
+        new AWN().alert('Veuillez sélectionner un demandeur', { durations: { alert: 5000 } });
+        return false;
+    }
+
+    // If input is empty → send AJAX to load all products
+    if (name_product === '') {
+        sendAjaxRequest(name_product, category, filter_subcategorie, type_commande);
+        return; // stop here (no need debounce)
+    }
+
+    // Otherwise → search with debounce
+    searchTimeoutt = setTimeout(function () {
+        sendAjaxRequest(name_product, category, filter_subcategorie, type_commande);
+    }, 400);
+});
     // Product search - Edit mode
     $('.input_products_edit').on('keydown', function(e) {
         if (e.keyCode === 13) {

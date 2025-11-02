@@ -103,8 +103,8 @@
                             </div>
                             <hr class="my-4">
                             <div class="mb-3">
-                                <h6 class="fs-15 mb-2">sign</h6>
-                                <p class="text-muted">hala hala</p>
+                                <h6 class="fs-15 mb-2">votre signature.</h6>
+                                <p class="text-muted">Si vous n’avez pas votre signature, veuillez l’ajouter ici.</p>
                                 <div class="mt-2">
                                     {{-- @if (!image)
                                         <canvas id="signature-pad" class="border border-red"></canvas>
