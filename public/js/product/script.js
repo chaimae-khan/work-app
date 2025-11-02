@@ -698,9 +698,12 @@ $('#BtnAddProduct').on('click', function(e) {
     
     let formData = new FormData($('#FormAddProduct')[0]);
     formData.append('_token', csrf_token);
-
+    let productSelect = $('#name');
+    let productValue = productSelect.val();               // e.g., "2"
+    let productText  = productSelect.find('option:selected').text();
+    formData.append('name', productText);
     $('#BtnAddProduct').prop('disabled', true).text('Enregistrement...');
-
+    
     $.ajax({
         type: "POST",
         url: addProduct_url,

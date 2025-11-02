@@ -313,7 +313,7 @@ if ($request->filled('filter_designation')) {
          }
      
          // Vérifier si un produit avec ce nom existe déjà (insensible à la casse)
-         $cleanedName = strtolower(trim($request->name));
+         /* $cleanedName = strtolower(trim($request->name));
          $nameExists = Product::whereRaw('LOWER(TRIM(name)) = ?', [$cleanedName])->count();
          
          if ($nameExists > 0) {
@@ -321,7 +321,7 @@ if ($request->filled('filter_designation')) {
                  'status' => 422,
                  'message' => 'Un produit avec ce nom existe déjà',
              ], 422);
-         }
+         } */
      
          try {
              
@@ -355,6 +355,8 @@ if ($request->filled('filter_designation')) {
                  $category->name, 
                  $subcategory->name
              );
+
+            
              
              // Handle file upload
              $photoPath = null;
@@ -371,20 +373,22 @@ if ($request->filled('filter_designation')) {
              }
              $idTva = $request->filled('id_tva') ? $request->id_tva : 1;
 
-
+            
 
              /************************** Youssef  *******************/
             $dateExpiration = $request->date_expiration;
             $dateReception  = $request->date_reception;
             $priceAchat     = $request->price_achat;
 
+           
+
             $existingProduct = Product::where('name', trim($request->name))
             ->where('date_expiration', $dateExpiration)
             ->where('price_achat', $priceAchat)
             ->where('date_reception', $dateReception)
             ->first();
-
-
+             
+            //dd($dateReception,$existingProduct);
             if ($existingProduct) 
             {
                 
@@ -411,6 +415,7 @@ if ($request->filled('filter_designation')) {
                     'product' => $existingProduct,
                 ]);
             }
+             
              /************************** End youssef check product **********/
              // Create product with the new foreign keys
              $product = Product::create([
@@ -426,10 +431,14 @@ if ($request->filled('filter_designation')) {
                  'seuil' => $request->seuil,
                  'id_local' => $request->id_local,
                  'id_rayon' => $request->id_rayon,
-                 'id_tva' => $request->id_tva,       
+                 'id_tva' => $idTva,       
                  'id_unite' => $request->id_unite,   
                  'id_user' => Auth::id(),
+                 'date_reception'    => $dateReception,
              ]);
+
+             //dd($request->all());
+            
      
              
              // Update emplacement after creating product
