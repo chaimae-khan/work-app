@@ -102,18 +102,47 @@
                                 </div>
                             </div>
                             <hr class="my-4">
-                            <div class="mb-3">
-                                <h6 class="fs-15 mb-2">votre signature.</h6>
-                                <p class="text-muted">Si vous n’avez pas votre signature, veuillez l’ajouter ici.</p>
-                                <div class="mt-2">
-                                    {{-- @if (!image)
-                                        <canvas id="signature-pad" class="border border-red"></canvas>
-                                        @else
-                                        <canvas id="signature-pad" class="border border-red"></canvas>
-                                    @endif --}}
-                                    <canvas id="signature-pad" class="border border-red"></canvas>
-                                </div>
-                            </div>
+                          <div class="mb-3">
+    <h6 class="fs-15 mb-2">Votre signature.</h6>
+    <p class="text-muted">Si vous n'avez pas votre signature, veuillez l'ajouter ici.</p>
+    <div class="mt-2">
+        @if(Auth::user()->signature)
+            <!-- Display existing signature -->
+            <div id="signature-display" class="border border-primary p-3 text-center">
+                <img src="{{ asset(Auth::user()->signature) }}" 
+                     alt="Signature" 
+                     style="max-width: 100%; height: auto; max-height: 200px;">
+                <div class="mt-2">
+                    <button type="button" class="btn btn-sm btn-warning" id="BtnChangeSignature">
+                        <i class="fas fa-edit"></i> Modifier la signature
+                    </button>
+                </div>
+            </div>
+            <!-- Hidden canvas for editing -->
+            <div id="signature-canvas-container" style="display: none;">
+                <canvas id="signature-pad" class="border border-red" width="600" height="200"></canvas>
+                <div class="mt-2">
+                    <button type="button" class="btn btn-sm btn-secondary" id="BtnClearSignature">
+                        <i class="fas fa-eraser"></i> Effacer
+                    </button>
+                    <button type="button" class="btn btn-sm btn-primary" id="BtnCancelSignature">
+                        <i class="fas fa-times"></i> Annuler
+                    </button>
+                </div>
+            </div>
+        @else
+            <!-- Show canvas if no signature exists -->
+            <div id="signature-canvas-container">
+                <canvas id="signature-pad" class="border border-red" width="600" height="200"></canvas>
+                <div class="mt-2">
+                    <button type="button" class="btn btn-sm btn-secondary" id="BtnClearSignature">
+                        <i class="fas fa-eraser"></i> Effacer
+                    </button>
+                </div>
+            </div>
+        @endif
+    </div>
+</div>
                         </div>
                     </div>
                     <!-- Fin carte sécurité -->

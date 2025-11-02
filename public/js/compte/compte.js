@@ -1,19 +1,46 @@
-/**
- * FICHIER JavaScript (compte.js)
- * ---------------------------------
- * À remplacer entièrement
- */
-
 $(document).ready(function() {
     const canvas = document.getElementById('signature-pad');
-    const signaturePad = new SignaturePad(canvas);
+    let signaturePad = null;
+    
+    // Initialize SignaturePad only if canvas exists
+    if (canvas) {
+        signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(255, 255, 255)'
+        });
+    }
+
+    // Button to change existing signature
+    $('#BtnChangeSignature').on('click', function() {
+        $('#signature-display').hide();
+        $('#signature-canvas-container').show();
+        // Clear the canvas for new signature
+        if (signaturePad) {
+            signaturePad.clear();
+        }
+    });
+
+    // Button to clear signature pad
+    $('#BtnClearSignature').on('click', function() {
+        if (signaturePad) {
+            signaturePad.clear();
+        }
+    });
+
+    // Button to cancel signature editing (only if signature exists)
+    $('#BtnCancelSignature').on('click', function() {
+        $('#signature-canvas-container').hide();
+        $('#signature-display').show();
+        if (signaturePad) {
+            signaturePad.clear();
+        }
+    });
+
     // Fonctionnalité pour montrer/cacher le mot de passe
     $('.toggle-password').on('click', function() {
         const passwordField = $($(this).data('toggle'));
         const type = passwordField.attr('type') === 'password' ? 'text' : 'password';
         passwordField.attr('type', type);
         
-        // Changer l'icône
         if (type === 'text') {
             $(this).removeClass('fa-eye').addClass('fa-eye-slash');
         } else {
@@ -25,29 +52,16 @@ $(document).ready(function() {
     $('#BtnEditProfile').on('click', function(e) {
         e.preventDefault();
         
-        // Préremplit les champs avec les informations actuelles
         $('#name').val($('#user-name').text().trim());
         $('#email').val($('#user-email').text().trim());
-        if (signaturePad.isEmpty()) 
-        {
-            alert('Please provide a signature first.');
-            $('#BtnADDUser').prop('disabled', false).text('Sauvegarder');
-            return;
-        }
         
-        
-        
-        // Afficher toutes les sections
         $('.profile-info-section').show();
         $('.password-only-section').hide();
         
-        // Réinitialiser les champs de mot de passe
         $('#current_password, #password, #password_confirmation').val('');
         
-        // Changer le titre du modal
         $('#ModalEditProfileLabel').text('Modifier mon profil');
         
-        // Afficher le modal
         $('#ModalEditProfile').modal('show');
     });
     
@@ -55,24 +69,18 @@ $(document).ready(function() {
     $('#BtnChangePassword').on('click', function(e) {
         e.preventDefault();
         
-        // Masquer la section d'informations de profil
         $('.profile-info-section').hide();
         $('.password-only-section').show();
         
-        // Réinitialiser les champs de mot de passe
         $('#current_password, #password, #password_confirmation').val('');
         
-        // Préserver les valeurs actuelles pour le nom et email (ils seront envoyés mais pas modifiés)
         $('#name').val($('#user-name').text().trim());
         $('#email').val($('#user-email').text().trim());
         
-        // Changer le titre du modal
         $('#ModalEditProfileLabel').text('Changer mon mot de passe');
         
-        // Afficher le modal
         $('#ModalEditProfile').modal('show');
         
-        // Focus sur le champ de mot de passe actuel
         setTimeout(function() {
             $('#current_password').focus();
         }, 500);
@@ -81,11 +89,25 @@ $(document).ready(function() {
     // Validation du formulaire de mise à jour du profil
     $('#BtnUpdateProfile').on('click', function(e) {
         e.preventDefault();
+        
+        // Check if signature is required and empty
+        if (signaturePad && !signaturePad.isEmpty()) {
+            // Signature exists, continue
+        } else if (signaturePad && signaturePad.isEmpty() && !$('#signature-display').is(':visible')) {
+            // No existing signature and canvas is empty
+            $('.validationEditProfile').html('<li>Veuillez fournir une signature</li>');
+            $('.validationEditProfile').addClass('alert alert-danger');
             
-        // Si le champ mot de passe est rempli, vérifie d'abord le mot de passe actuel
-        if ($('#password').val() !== '') 
-        {
-            // Vérifie que current_password est rempli
+            setTimeout(() => {
+                $('.validationEditProfile').fadeOut('slow', function() {
+                    $(this).html("").removeClass('alert alert-danger').show();
+                });
+            }, 5000);
+            
+            return;
+        }
+            
+        if ($('#password').val() !== '') {
             if ($('#current_password').val() === '') {
                 $('.validationEditProfile').html('<li>Veuillez saisir votre mot de passe actuel pour confirmer les modifications</li>');
                 $('.validationEditProfile').addClass('alert alert-danger');
@@ -99,7 +121,6 @@ $(document).ready(function() {
                 return;
             }
             
-            // Vérifie que les deux mots de passe correspondent
             if ($('#password').val() !== $('#password_confirmation').val()) {
                 $('.validationEditProfile').html('<li>Les mots de passe ne correspondent pas</li>');
                 $('.validationEditProfile').addClass('alert alert-danger');
@@ -112,21 +133,24 @@ $(document).ready(function() {
                 
                 return;
             }
-            const dataUrl = signaturePad.toDataURL();
             
-            // Vérifie le mot de passe actuel d'abord
+            // Get signature data if canvas is not empty
+            let dataUrl = null;
+            if (signaturePad && !signaturePad.isEmpty()) {
+                dataUrl = signaturePad.toDataURL();
+            }
+            
             $.ajax({
                 type: "POST",
                 url: VerifyPasswordUrl,
                 data: {
                     _token: csrf_token,
                     current_password: $('#current_password').val(),
-                    'image' : dataUrl
+                    'image': dataUrl
                 },
                 dataType: "json",
                 success: function(response) {
                     if (response.status == 200) {
-                        // Le mot de passe est correct, effectue la mise à jour du profil
                         updateProfile();
                     } else if (response.status == 422) {
                         $('.validationEditProfile').html('<li>' + response.message + '</li>');
@@ -158,7 +182,6 @@ $(document).ready(function() {
                 }
             });
         } else {
-            // Pas de changement de mot de passe, mise à jour directe du profil
             updateProfile();
         }
     });
@@ -167,8 +190,12 @@ $(document).ready(function() {
     function updateProfile() {
         let formData = new FormData($('#FormUpdateProfile')[0]);
         formData.append('_token', csrf_token);
-        const dataUrl = signaturePad.toDataURL();
-        formData.append('image', dataUrl);
+        
+        // Add signature if canvas is not empty
+        if (signaturePad && !signaturePad.isEmpty()) {
+            const dataUrl = signaturePad.toDataURL();
+            formData.append('image', dataUrl);
+        }
         
         $('#BtnUpdateProfile').prop('disabled', true).text('Mise à jour...');
         
@@ -186,14 +213,11 @@ $(document).ready(function() {
                     new AWN().success(response.message, {durations: {success: 5000}});
                     $('#ModalEditProfile').modal('hide');
                     
-                    // Mise à jour des informations affichées sans rechargement
                     $('#user-name').text(formData.get('name'));
                     $('#user-email').text(formData.get('email'));
                     
-                    // Réinitialiser le formulaire
                     $('#FormUpdateProfile')[0].reset();
                     
-                    // Rafraîchir la page après 1.5 secondes
                     setTimeout(function() {
                         location.reload();
                     }, 1500);

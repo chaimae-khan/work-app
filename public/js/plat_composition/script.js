@@ -350,90 +350,135 @@ $(document).ready(function () {
     }
 
     // Initialize product table
-    function initializeTableProduct(selector, data, isEdit) {
-        let tableKey = isEdit ? 'productSearchEdit' : 'productSearch';
+ function initializeTableProduct(selector, data, isEdit) {
+    let tableKey = isEdit ? 'productSearchEdit' : 'productSearch';
+    
+    // ✅ VALIDATE DATA FIRST
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        console.warn('No valid data provided to initializeTableProduct');
         
+        // Initialize empty table
         if (activeDataTables[tableKey]) {
             activeDataTables[tableKey].destroy();
             activeDataTables[tableKey] = null;
         }
-
+        
         activeDataTables[tableKey] = $(selector).DataTable({
-            data: data,
+            data: [],
             destroy: true,
             columns: [
-                { data: 'name', title: 'Produit' },
-                { data: 'quantite', title: 'Quantité' },
-                { data: 'seuil', title: 'Seuil' },
-                { data: 'name_local', title: 'Local' },
-                { data: 'unite_name', title: 'Unité' }
+                { data: 'name', title: 'Produit', defaultContent: '' },
+                { data: 'quantite', title: 'Quantité', defaultContent: '' },
+                { data: 'seuil', title: 'Seuil', defaultContent: '' },
+                { data: 'name_local', title: 'Local', defaultContent: '' },
+                { data: 'unite_name', title: 'Unité', defaultContent: '' }
             ],
-            rowCallback: function(row, data) {
-                $(row).attr('id', data.id);
-                $(row).attr('data-unite', data.id_unite);
-            },
             language: {
                 "sInfo": "",
                 "sSearch": "Rechercher :",
                 "sZeroRecords": "Aucun produit trouvé"
             }
         });
-
-        // Row click handler
-        $(selector + ' tbody').off('click', 'tr');
-        $(selector + ' tbody').on('click', 'tr', function(e) {
-            e.preventDefault();
-            
-            let id = $(this).attr('id');
-            let id_unite = $(this).attr('data-unite');
-            let currentPlatId = isEdit ? $('#edit_id_plat').val() : selectedPlatId;
-            let currentNombreCouvert = isEdit ? $('#edit_nombre_couvert').val() : nombreCouvert;
-            
-            if (!id || currentPlatId == 0) {
-                new AWN().alert('Veuillez sélectionner un plat', {durations: {alert: 5000}});
-                return false;
-            }
-
-            // Show quantity input modal
-            let qte = prompt("Entrez la quantité:");
-            if (qte === null || qte === "" || parseFloat(qte) <= 0) {
-                new AWN().warning('Quantité invalide', {durations: {warning: 3000}});
-                return;
-            }
-
-            $.ajax({
-                type: "POST",
-                url: PostInTmpPlat,
-                data: {
-                    '_token': csrf_token,
-                    'idproduit': id,
-                    'id_plat': currentPlatId,
-                    'id_unite': id_unite,
-                    'qte': qte,
-                    'nombre_couvert': currentNombreCouvert
-                },
-                dataType: "json",
-                success: function(response) {
-                    if (response.status == 200) {
-                        new AWN().success(response.message, {durations: {success: 5000}});
-                        let tableSelector = isEdit ? '.TableTmpPlatEdit' : '.TableTmpPlat';
-                        initializeTableTmpPlat(tableSelector, currentPlatId, isEdit);
-                    }
-                },
-                error: function(xhr) {
-                    if (xhr.responseJSON && xhr.responseJSON.errors) {
-                        let errorMessages = [];
-                        $.each(xhr.responseJSON.errors, function(key, value) {
-                            errorMessages.push(value);
-                        });
-                        new AWN().alert(errorMessages.join('<br>'), {durations: {alert: 5000}});
-                    }
-                }
-            });
-        });
-
+        
         return activeDataTables[tableKey];
     }
+    
+    // ✅ VALIDATE EACH ROW HAS REQUIRED FIELDS
+    const validatedData = data.map(item => {
+        if (!item.unite_name) {
+            console.warn('Missing unite_name for item:', item);
+        }
+        return {
+            id: item.id || '',
+            name: item.name || '',
+            quantite: item.quantite || 0,
+            seuil: item.seuil || 0,
+            name_local: item.name_local || '',
+            unite_name: item.unite_name || 'N/A',  // ← Fallback
+            id_unite: item.id_unite || ''
+        };
+    });
+    
+    if (activeDataTables[tableKey]) {
+        activeDataTables[tableKey].destroy();
+        activeDataTables[tableKey] = null;
+    }
+
+    activeDataTables[tableKey] = $(selector).DataTable({
+        data: validatedData,  // ← Use validated data
+        destroy: true,
+        columns: [
+            { data: 'name', title: 'Produit', defaultContent: 'N/A' },
+            { data: 'quantite', title: 'Quantité', defaultContent: '0' },
+            { data: 'seuil', title: 'Seuil', defaultContent: '0' },
+            { data: 'name_local', title: 'Local', defaultContent: 'N/A' },
+            { data: 'unite_name', title: 'Unité', defaultContent: 'N/A' }  // ← Add defaultContent
+        ],
+        rowCallback: function(row, data) {
+            $(row).attr('id', data.id);
+            $(row).attr('data-unite', data.id_unite);
+        },
+        language: {
+            "sInfo": "",
+            "sSearch": "Rechercher :",
+            "sZeroRecords": "Aucun produit trouvé"
+        }
+    });
+
+    // Row click handler
+    $(selector + ' tbody').off('click', 'tr');
+    $(selector + ' tbody').on('click', 'tr', function(e) {
+        e.preventDefault();
+        
+        let id = $(this).attr('id');
+        let id_unite = $(this).attr('data-unite');
+        let currentPlatId = isEdit ? $('#edit_id_plat').val() : selectedPlatId;
+        let currentNombreCouvert = isEdit ? $('#edit_nombre_couvert').val() : nombreCouvert;
+        
+        if (!id || currentPlatId == 0) {
+            new AWN().alert('Veuillez sélectionner un plat', {durations: {alert: 5000}});
+            return false;
+        }
+
+        let qte = prompt("Entrez la quantité:");
+        if (qte === null || qte === "" || parseFloat(qte) <= 0) {
+            new AWN().warning('Quantité invalide', {durations: {warning: 3000}});
+            return;
+        }
+
+        $.ajax({
+            type: "POST",
+            url: PostInTmpPlat,
+            data: {
+                '_token': csrf_token,
+                'idproduit': id,
+                'id_plat': currentPlatId,
+                'id_unite': id_unite,
+                'qte': qte,
+                'nombre_couvert': currentNombreCouvert
+            },
+            dataType: "json",
+            success: function(response) {
+                if (response.status == 200) {
+                    new AWN().success(response.message, {durations: {success: 5000}});
+                    let tableSelector = isEdit ? '.TableTmpPlatEdit' : '.TableTmpPlat';
+                    initializeTableTmpPlat(tableSelector, currentPlatId, isEdit);
+                }
+            },
+            error: function(xhr) {
+                if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    let errorMessages = [];
+                    $.each(xhr.responseJSON.errors, function(key, value) {
+                        errorMessages.push(value);
+                    });
+                    new AWN().alert(errorMessages.join('<br>'), {durations: {alert: 5000}});
+                }
+            }
+        });
+    });
+
+    return activeDataTables[tableKey];
+}
     let searchTimeoutt = null;
   $('.input_products').on('input', function (e) {
     e.preventDefault();
