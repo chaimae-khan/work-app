@@ -4,6 +4,26 @@
 <!-- External Libraries -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@6.5.95/css/materialdesignicons.min.css">
+<!-- Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    flatpickr(".datepicker", {
+        locale: "fr",           // french labels for days/months
+        dateFormat: "Y-m-d",    // format submitted to server (YYYY-MM-DD)
+        altInput: true,         // show a nicer, human readable input
+        altFormat: "j F Y",     // e.g. "1 janvier 2025" shown to user (in French)
+        allowInput: false,      // prevent typing — force selection from calendar
+        clickOpens: true
+    });
+});
+</script>
+
 
 <!-- JS Personnalisé - Charge après les bibliothèques externes -->
 <script>
@@ -163,7 +183,7 @@
                 <!-- Formulaire d'ajout de produit -->
                 <form id="FormAddProduct" enctype="multipart/form-data">
                     
-                    <!-- Classe et Catégorie -->
+                    <!-- Classe, Catégorie et Famille -->
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <div class="form-group">
@@ -186,7 +206,6 @@
                         </div>
                     </div>
 
-                    <!-- Famille -->
                     <div class="row mb-3">
                         <div class="col-md-12">
                             <div class="form-group">
@@ -237,7 +256,6 @@
                                 <label>Rayon</label>
                                 <select name="id_rayon" id="id_rayon" class="form-control" required>
                                     <option value="">Sélectionner un rayon</option>
-                                    <!-- Sera rempli dynamiquement -->
                                 </select>
                             </div>
                         </div>
@@ -253,59 +271,45 @@
                         </div>
                     </div>
 
-                    <!-- Quantité, Seuil et TVA -->
+                    <!-- Quantité et Seuil -->
                     <div class="row mb-3">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Quantité</label>
                                 <input type="number" step="0.01" name="quantite" class="form-control" required>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Seuil</label>
                                 <input type="number" step="0.01" name="seuil" class="form-control" required>
                             </div>
                         </div>
-                        <!-- <div class="col-md-4">
-                            <div class="form-group">
-                                <label>TVA</label>
-                                <select name="id_tva" class="form-control" required>
-                                    <option value="">Sélectionner une TVA</option>
-                                    @foreach($tvas as $tva)
-                                        <option value="{{ $tva->id }}">{{ $tva->value }}%</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div> -->
                     </div>
 
-                    <!-- Date d'expiration -->
+                    <!-- Fournisseur et Dates -->
                     <div class="row mb-3">
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label>Date d'expiration</label>
-                                <input type="date" name="date_expiration" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Fournissuer</label>
-                                <select name="" id="" class="form-select">
-                                    <option value="0">Please selected Fournissuer</option>
+                                <label>Fournisseur</label>
+                                <select name="id_fournisseur" id="id_fournisseur" class="form-control">
+                                    <option value="">Sélectionner un fournisseur</option>
                                     @foreach ($Fournisseur as $item)
-                                        <option value={{ $item->id }}>{{ $item->entreprise }}</option>
+                                        <option value="{{ $item->id }}">{{ $item->entreprise }}</option>
                                     @endforeach
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label>Fournissuer</label>
-                                <div class="form-group">
-                                <label>Date réception</label>
-                                <input type="date" name="date_reception" class="form-control">
+                                <label>Date de réception</label>
+                                <input type="text" name="date_reception" class="form-control datepicker" placeholder="Choisissez une date">
                             </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Date d'expiration</label>
+                                <input type="text" name="date_expiration" class="form-control datepicker" placeholder="Choisissez une date">
                             </div>
                         </div>
                     </div>
