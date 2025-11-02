@@ -451,11 +451,21 @@ class CategoriesController extends Controller
     public function GetCategorieByClass(Request $request)
     {
         $class = $request->class;
-        $categories = DB::select('select * from categories where classe = ?',[$class]);
-       
+
+        $categories = DB::table('categories')
+                        ->where('classe', $class)
+                        ->get();
+
+        $categoryIds = $categories->pluck('id');
+
+        $products = DB::table('products')
+                    ->whereIn('id_categorie', $categoryIds)
+                    ->get();
+
         return response()->json([
             'status'  => 200,
             'data'    => $categories,
+            'products' => $products
         ]);
     }
 }

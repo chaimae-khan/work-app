@@ -367,6 +367,14 @@ function loadSubcategories(categorySelector, subcategorySelector, selectedValue 
                         `<option value="${subcategory.id}">${subcategory.name}</option>`
                     );
                 });
+
+                let $drodownProduct = $('#name');
+                $drodownProduct.empty();
+                $drodownProduct.append('<option value="0">Veuillez sélectionner des produits</option>');
+                $.each(response.products, function (index, value) 
+                { 
+                     $drodownProduct.append('<option value="' +value.id+ '">' + value.name + '</option>');
+                });
                 
                 // Set selected value if provided
                 if (selectedValue) {
@@ -991,6 +999,76 @@ $(document).on('click', '#BtnImportProduct', function(e) {
         }
     });
 });
+
+
+$('#id_subcategorie').on('change',function(e)
+{
+    e.preventDefault();
+    let id_sub_category = $(this).val();
+    let classValue = $('#Class_Categorie').val();
+    let category = $('#Categorie_Class').val();
+
+    if (classValue == 0 || classValue === "") {
+        alert("Please select a class.");
+        return false;
+    }
+
+    if (category == 0 || category === "") {
+        alert("Please select a category.");
+        return false;
+    }
+
+    $.ajax({
+        type: "get",
+        url: GetProductByFamaille,
+        data: 
+        {
+            id_sub_category : id_sub_category
+        },
+        dataType: "json",
+        success: function (response) 
+        {
+            if(response.status == 200)
+            {
+                let $dropDownProduct = $('#name');
+                $dropDownProduct.empty();
+                $dropDownProduct.append('<option value="0">Veuillez sélectionner des produits</option>');
+                $.each(response.products, function (index, value) 
+                { 
+                    $dropDownProduct.append('<option value="' +value.id+ '">' + value.name + '</option>');
+                });
+            }    
+        }
+    });
+});
+
+$('#name').on('change', function(e) {
+    e.preventDefault();
+    let product = $(this).val();
+
+    if (product == 0 || product === "") {
+        alert("Please select a product.");
+        return false;
+    }
+
+    $.ajax({
+        type: "get",
+        url: getUnitebyProduct,
+        data: { product: product },
+        dataType: "json",
+        success: function(response) {
+            if (response.status == 200) {
+                let $dropDownid_unite = $('#id_unite');
+                $dropDownid_unite.empty();
+                $dropDownid_unite.append('<option value="0">Veuillez sélectionner une unité</option>');
+                $dropDownid_unite.append('<option value="' + response.unite.id + '">' + response.unite.name + '</option>');
+            } else {
+                alert(response.message);
+            }
+        }
+    });
+});
+
 
 
 

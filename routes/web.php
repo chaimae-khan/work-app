@@ -338,5 +338,8 @@ Route::get('getPlatsByType', [PlatsController::class, 'getPlatsByType']);
 
 
     Route::get('sendPlatToTmpVente'      ,[VenteController::class,'sendPlatToTmpVente']);
+
+    Route::get('GetProductByFamaille',[ProductController::class,'GetProductByFamaille']);
+    Route::get('getUnitebyProduct',[ProductController::class,'getUnitebyProduct']);
 });
 

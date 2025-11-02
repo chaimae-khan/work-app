@@ -19,6 +19,9 @@
     var importProduct_url = "{{ url('importProduct') }}";
     var GetCategorieByClass = "{{url('GetCategorieByClass')}}"; 
     var searchProductNames_url = "{{ url('searchProductNames') }}";
+    var getProduct             = "{{ url('getProduct') }}";
+    var GetProductByFamaille             = "{{ url('GetProductByFamaille') }}";
+    var getUnitebyProduct             = "{{ url('getUnitebyProduct') }}";
 </script>
 <script src="{{ asset('js/product/script.js') }}"></script>
 
@@ -203,7 +206,10 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Désignation</label>
-                                <input type="text" name="name" class="form-control" required>
+                                {{-- <input type="text" name="name" class="form-control" required> --}}
+                                <select name="name" id="name" class="form-select" required>
+
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -255,19 +261,19 @@
 
                     <!-- Quantité, Seuil et TVA -->
                     <div class="row mb-3">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Quantité</label>
                                 <input type="number" step="0.01" name="quantite" class="form-control" required>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Seuil</label>
                                 <input type="number" step="0.01" name="seuil" class="form-control" required>
                             </div>
                         </div>
-                        <!-- <div class="col-md-4">
+                        {{--  <div class="col-md-4">
                             <div class="form-group">
                                 <label>TVA</label>
                                 <select name="id_tva" class="form-control" required>
@@ -277,7 +283,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                        </div> -->
+                        </div> --}}
                     </div>
 
                     <!-- Date d'expiration -->
@@ -301,11 +307,11 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label>Fournissuer</label>
+                                
                                 <div class="form-group">
-                                <label>Date réception</label>
-                                <input type="date" name="date_reception" class="form-control">
-                            </div>
+                                    <label>Date réception</label>
+                                    <input type="date" name="date_reception" class="form-control">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -548,29 +554,38 @@
 </div>
 <script>
     $('#Class_Categorie').on('change',function()
-{
-    let name = $(this).val();
-    
-    $.ajax({
-        type: "GET",
-        url: GetCategorieByClass,
-        data: 
-        {
-            class : name,
-        },
-        dataType: "json",
-        success: function (response) {
-            if(response.status == 200)
+    {
+        let name = $(this).val();
+        
+        $.ajax({
+            type: "GET",
+            url: GetCategorieByClass,
+            data: 
             {
-                let $dropdown =$('#Categorie_Class');
-                $dropdown.empty();
-                
-                $.each(response.data,function(index, item){
-                    $dropdown.append('<option value="' +item.id+ '">' + item.name + '</option>');
-                });
+                class : name,
+            },
+            dataType: "json",
+            success: function (response) {
+                if(response.status == 200)
+                {
+                    let $dropdown =$('#Categorie_Class');
+                    $dropdown.empty();
+                    
+                    $.each(response.data,function(index, item){
+                        $dropdown.append('<option value="' +item.id+ '">' + item.name + '</option>');
+                    });
+                    let $drodownProduct = $('#name');
+                    $drodownProduct.empty();
+                    $drodownProduct.append('<option value="0">Veuillez sélectionner des produits</option>');
+                    $.each(response.products, function (index, value) 
+                    { 
+                         $drodownProduct.append('<option value="' +value.id+ '">' + value.name + '</option>');
+                    });
+                }
             }
-        }
+        });
     });
-});
+
+    /* $('#') */
 </script>
 @endsection

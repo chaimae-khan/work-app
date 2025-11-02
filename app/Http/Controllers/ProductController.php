@@ -152,6 +152,7 @@ if ($request->filled('filter_designation')) {
         $tvas = Tva::all();
         $unites = Unite::all();
         $Fournisseur=Fournisseur::all();
+        
         $class  = DB::select("select distinct(classe) as classe from categories");
         
         return view('products.index',
@@ -184,6 +185,8 @@ if ($request->filled('filter_designation')) {
                 ->orderBy('name', 'asc')
                 ->get();
             
+            $Products = DB::table('products')->where('id_categorie',$categoryId)->get();
+            
             // Log the retrieval for debugging
             Log::info('Subcategories retrieved', [
                 'category_id' => $categoryId,
@@ -192,7 +195,8 @@ if ($request->filled('filter_designation')) {
             
             return response()->json([
                 'status' => 200,
-                'subcategories' => $subcategories
+                'subcategories' => $subcategories,
+                'products' => $Products
             ]);
         } catch (\Exception $e) {
             // Log the error with more context
@@ -1263,4 +1267,42 @@ public function searchProductNames(Request $request)
         ], 500);
     }
 }
+
+    public function GetProductByFamaille(Request $request)
+    {
+        $Products = DB::table('products')->where('id_subcategorie',$request->id_sub_category)->get();
+        if($Products)
+        {
+            return response()->json([
+                'status'     => 200,
+                'products'    => $Products
+            ]);
+        }
+    }
+
+
+   public function getUnitebyProduct(Request $request)
+{
+    $id_unite = DB::table('products')
+        ->where('id', $request->product)
+        ->select('id_unite')
+        ->first();
+
+    if (!$id_unite) {
+        return response()->json([
+            'status' => 404,
+            'message' => 'Product not found',
+        ]);
+    }
+
+    $unite = DB::table('unite')
+        ->where('id', $id_unite->id_unite)
+        ->first();
+
+    return response()->json([
+        'status' => 200,
+        'unite'  => $unite,
+    ]);
+}
+
 }
