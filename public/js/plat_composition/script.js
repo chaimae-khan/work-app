@@ -7,6 +7,102 @@ $(document).ready(function () {
         tmpPlatEdit: null,
         productSearchEdit: null
     };
+    function toggleQuantityFieldsAndMenu() {
+        var commandType = $('#type_commande').val();
+       
+        if(commandType !=0)
+        {
+            $.ajax({
+                type: "get",
+                url: getcategorybytypemenu,
+                data: 
+                {
+                    type_commande : commandType,
+                },
+                dataType: "json",
+                success: function (response) 
+                {
+                    if(response.status == 200)
+                    {
+                        $('#filter_categorie').empty();
+                        $.each(response.data, function (index, value) 
+                        { 
+                            $('#filter_categorie').append(`<option value=${value.id}>${value.name}</option>`)     
+                        });
+                    }    
+                }
+            });
+        }
+        else
+        {
+           $('#filter_categorie').empty(); 
+        }
+        
+       
+    }
+    $('#type_commande').on('change', function() {
+        toggleQuantityFieldsAndMenu();
+    });
+
+
+    $('#filter_categorie').on('change', function() {
+        var categoryId = $(this).val();
+        let name_product = $('.input_products').val().trim();
+        
+        // Reset subcategory dropdown FIRST
+        $('#filter_subcategorie').empty().append('<option value="">Toutes les familles</option>');
+        
+        if (categoryId) {
+            // Visual feedback during search
+            $('.input_products').prop('disabled', true);
+           
+            
+            // Fetch subcategories for selected category
+            $.get('/vente/subcategories/' + categoryId, function(response) {
+                if (response.status === 200 && response.subcategories.length > 0) {
+                    $.each(response.subcategories, function(key, subcategory) {
+                        $('#filter_subcategorie').append(
+                            '<option value="' + subcategory.id + '">' + subcategory.name + '</option>'
+                        );
+                    });
+                } else {
+                    new AWN().info("Aucune famille trouvée pour cette catégorie", {
+                        durations: { info: 3000 }
+                    });
+                }
+            }).fail(function(xhr, status, error) {
+                console.error("Error loading subcategories:", error);
+                new AWN().alert("Erreur lors du chargement des familles", {
+                    durations: { alert: 5000 }
+                });
+            });
+            
+            // NOW fetch products with ONLY category (no subcategory filter)
+            $.get(getProduct, { 
+                product: name_product,
+                filter_subcategorie: '',  // ← EMPTY! Just category filter
+                category: categoryId 
+            }, function(secondResponse) {
+                if (secondResponse.status === 200) {
+                    $('.input_products').prop('disabled', false);
+                    
+                    initializeTableProduct('.TableProductPlat', secondResponse.data);
+                    $('.input_products').val(""); 
+                } else {
+                    $('.input_products').prop('disabled', false);
+                   
+                    new AWN().info("Aucun produit trouvé.", {durations: {info: 5000}});
+                }
+            }).fail(function(xhr, status, error) {
+                $('.input_products').prop('disabled', false);
+                
+                console.error("Error in second request:", error);
+                new AWN().alert("Erreur lors du deuxième chargement", {
+                    durations: { alert: 5000 }
+                });
+            });
+        }
+    });
 
     // Initialize main datatable
     function initializeTablePlatComposition() {
@@ -338,7 +434,7 @@ $(document).ready(function () {
 
         return activeDataTables[tableKey];
     }
-
+    let searchTimeoutt = null;
   $('.input_products').on('input', function (e) {
     e.preventDefault();
 
@@ -366,6 +462,49 @@ $(document).ready(function () {
         sendAjaxRequest(name_product, category, filter_subcategorie, type_commande);
     }, 400);
 });
+
+function sendAjaxRequest(name_product, category, filter_subcategorie, type_commande) {
+    // Visual feedback
+    $('.input_products').prop('disabled', true);
+    $('.TableProductPlat_wrapper').addClass('opacity-50');
+
+    $.ajax({
+        type: "GET",
+        url: getProduct,
+        data: {
+            product: name_product,
+            category: category,
+            filter_subcategorie: filter_subcategorie,
+            type_commande: type_commande,
+        },
+        dataType: "json",
+        success: function (response) {
+            $('.input_products').prop('disabled', false);
+            $('.TableProductPlat_wrapper').removeClass('opacity-50');
+
+            if (response.status == 200) {
+                initializeTableProduct('.TableProductPlat', response.data);
+            } else {
+                new AWN().info("Aucun produit trouvé.", { durations: { info: 3000 } });
+                $('.TableProductPlat').DataTable().clear().draw();
+            }
+        },
+        error: function (xhr, status, error) {
+            $('.input_products').prop('disabled', false);
+            $('.TableProductPlat_wrapper').removeClass('opacity-50');
+
+            console.error("Error searching for product:", error);
+            console.error("Response:", xhr.responseText);
+
+            try {
+                const errorData = JSON.parse(xhr.responseText);
+                new AWN().alert(errorData.message || "Erreur lors de la recherche", { durations: { alert: 5000 } });
+            } catch (e) {
+                new AWN().alert("Erreur lors de la recherche", { durations: { alert: 5000 } });
+            }
+        }
+    });
+}
     // Product search - Edit mode
     $('.input_products_edit').on('keydown', function(e) {
         if (e.keyCode === 13) {

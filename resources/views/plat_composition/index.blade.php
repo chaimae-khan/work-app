@@ -2,7 +2,7 @@
 
 @section('dashboard')
 <script src="{{asset('js/plat_composition/script.js')}}"></script>
-<script src="{{asset('js/vente/script.js')}}"></script>
+{{-- <script src="{{asset('js/vente/script.js')}}"></script> --}}
 <script>
     var csrf_token = "{{csrf_token()}}";
     var getPlatsByTypeForComposition = "{{url('getPlatsByTypeForComposition')}}";
